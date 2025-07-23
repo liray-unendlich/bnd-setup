@@ -27,7 +27,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### ノード1（メインノード・インフラサーバー）での実行
 ```bash
 # 1. リポジトリクローン&環境構築
-NODE_TYPE=1 curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
+export NODE_TYPE=1
+curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
 
 # 2. 環境変数編集（必須）
 vi node1-main/.env
@@ -43,7 +44,8 @@ vi node1-main/.env
 ### ノード2（GPUクラスター・プルーフサーバー）での実行
 ```bash
 # 1. リポジトリクローン&環境構築
-NODE_TYPE=2 curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
+export NODE_TYPE=2
+curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
 
 # 2. 環境変数編集（必須）
 vi node2-gpu/.env

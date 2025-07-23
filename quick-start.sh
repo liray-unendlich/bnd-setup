@@ -35,6 +35,16 @@ else
     
     if [ -z "$NODE_TYPE" ]; then
         echo "エラー: NODE_TYPE環境変数が設定されていません"
+        echo "以下のいずれかの方法で実行してください："
+        echo ""
+        echo "方法1: 環境変数を設定してから実行"
+        echo "  export NODE_TYPE=1"
+        echo "  curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash"
+        echo ""
+        echo "方法2: wgetでダウンロードして実行"
+        echo "  wget https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh"
+        echo "  chmod +x quick-start.sh"
+        echo "  ./quick-start.sh"
         exit 1
     fi
     REPLY=$NODE_TYPE
