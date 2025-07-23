@@ -80,6 +80,23 @@ RISC0_DEV_MODE=1 cargo test    # 高速開発モードテスト
 bun install && bun run docs    # http://localhost:5173
 ```
 
+### Boundlessプロジェクト準備
+```bash
+# Boundlessプロジェクトの準備（ブローカー使用時に必要）
+cd ~/work
+git clone https://github.com/boundless-xyz/boundless.git
+
+# Boundlessプロジェクトビルド
+cd boundless
+forge build                    # Solidity contracts
+cargo build --release          # Rust crates
+cargo test                     # テスト実行
+RISC0_DEV_MODE=1 cargo test    # 高速開発モードテスト
+
+# ドキュメント確認
+bun install && bun run docs    # http://localhost:5173
+```
+
 ### 自動ビルドスクリプト
 ```bash
 # 統合ビルドスクリプト（推奨）
