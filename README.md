@@ -17,9 +17,10 @@ RISC Zero Bentoを2ノード構成（メインノード + GPUクラスター）�
 ## ディレクトリ構造
 
 ```
-bento-distributed-deploy/
+bnd-setup/
 ├── node1-main/              # ノード1（メインノード）用ファイル
 │   ├── docker-compose.yml   # Docker Compose設定
+│   ├── broker.toml.example  # ブローカー設定テンプレート
 │   └── .env                 # 環境変数（要編集）
 ├── node2-gpu/               # ノード2（GPUノード）用ファイル
 │   ├── docker-compose.yml   # Docker Compose設定
@@ -28,10 +29,21 @@ bento-distributed-deploy/
 │   ├── deploy-node1.sh      # ノード1デプロイスクリプト
 │   ├── deploy-node2.sh      # ノード2デプロイスクリプト
 │   ├── setup-firewall-node1.sh  # ノード1ファイアウォール設定
-│   └── setup-firewall-node2.sh  # ノード2ファイアウォール設定
+│   ├── setup-firewall-node2.sh  # ノード2ファイアウォール設定
+│   └── build-boundless.sh   # Boundlessプロジェクトビルド
 ├── docs/                    # ドキュメント
+├── quick-start.sh           # ワンライナーセットアップ
 └── README.md               # このファイル
 ```
+
+## 📖 目次
+
+- [🚀 超簡単セットアップ](#超簡単セットアップ推奨)
+- [⚙️ 運用コマンド](#運用コマンド)  
+- [🤖 ブローカー起動（本格運用）](#ブローカー起動本格運用)
+- [📊 監視とトラブルシューティング](#監視とトラブルシューティング)
+- [🔒 セキュリティ考慮事項](#セキュリティ考慮事項)
+- [💾 バックアップ](#バックアップ)
 
 ## 🚀 超簡単セットアップ（推奨）
 
@@ -180,10 +192,74 @@ docker-compose --profile multi-gpu up -d
 docker-compose up -d --scale gpu_prove_agent0=2
 ```
 
-### ブローカー起動（オプション）
+## ブローカー起動（本格運用）
+
+ブローカーはBoundlessマーケットプレイスと連携してZK証明を自動化するサービスです。
+
+### 1. Boundlessプロジェクト準備
+```bash
+# ノード1で実行
+cd ~/work
+git clone https://github.com/boundless-xyz/boundless.git
+
+# プロジェクトビルド
+cd boundless
+forge build
+cargo build --release
+
+# 開発環境確認
+cargo risczero --version
+forge --version
+```
+
+### 2. ブローカー設定
+```bash
+# ノード1のnode1-mainディレクトリで実行
+cd ~/work/bnd-setup/node1-main
+
+# 設定ファイル作成
+cp broker.toml.example broker.toml
+
+# 設定編集（重要）
+vi broker.toml
+# 以下の項目を環境に合わせて設定：
+# - mcycle_price: 証明価格設定
+# - peak_prove_khz: GPU性能設定
+# - allow_client_addresses: 許可クライアント
+# - timing_mode: 競争戦略
+```
+
+### 3. 環境変数確認
+```bash
+# .envファイルで以下が設定されていることを確認
+cat .env | grep -E "(PRIVATE_KEY|RPC_URL|BOUNDLESS_MARKET_ADDRESS)"
+
+# 必要に応じて設定
+vi .env
+```
+
+### 4. ブローカー起動
 ```bash
 # ノード1で実行
 docker-compose --profile broker up -d broker
+
+# 起動確認
+docker-compose logs -f broker
+
+# ブローカー状態確認
+docker-compose ps | grep broker
+```
+
+### 5. ブローカー監視
+```bash
+# ログ監視
+docker-compose logs -f broker | grep -E "(order|proof|batch)"
+
+# データベース確認
+docker-compose exec broker ls -la /db/
+
+# 残高確認（ログ内で警告を確認）
+docker-compose logs broker | grep -E "(balance|stake)"
 ```
 
 ## 監視とトラブルシューティング
@@ -227,6 +303,13 @@ docker stats
 3. **メモリ不足**
    - `free -h`でメモリ使用量確認
    - `docker system prune -f`で不要なイメージ削除
+
+4. **ブローカー関連のトラブル**
+   - **Dockerfile not found**: `~/work/boundless`にBoundlessプロジェクトをクローン
+   - **Environment variables**: `.env`ファイルでPRIVATE_KEY、RPC_URL等を設定
+   - **Permission denied**: `broker.toml`の権限を確認 (`chmod 644 broker.toml`)
+   - **Connection failed**: Ethereumネットワーク接続とRPC_URLを確認
+   - **Balance insufficient**: ウォレット残高（ETH）とステーク残高を確認
 
 ## セキュリティ考慮事項
 
