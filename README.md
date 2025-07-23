@@ -198,9 +198,15 @@ docker-compose up -d --scale gpu_prove_agent0=2
 
 ### 1. Boundlessプロジェクト準備
 ```bash
-# ノード1で実行
+# ノード1で実行（~/work/bnd-setupと同じディレクトリに配置）
 cd ~/work
 git clone https://github.com/boundless-xyz/boundless.git
+
+# ディレクトリ構造確認
+ls -la ~/work/
+# 以下のような構造になっているはず：
+# ~/work/bnd-setup/    <- このリポジトリ
+# ~/work/boundless/    <- Boundlessプロジェクト
 
 # プロジェクトビルド
 cd boundless
@@ -306,6 +312,11 @@ docker stats
 
 4. **ブローカー関連のトラブル**
    - **Dockerfile not found**: `~/work/boundless`にBoundlessプロジェクトをクローン
+     ```bash
+     cd ~/work && git clone https://github.com/boundless-xyz/boundless.git
+     ```
+   - **Build context error**: ディレクトリ構造を確認 (`ls -la ~/work/`)
+     - `~/work/bnd-setup/` と `~/work/boundless/` が同じレベルにあること
    - **Environment variables**: `.env`ファイルでPRIVATE_KEY、RPC_URL等を設定
    - **Permission denied**: `broker.toml`の権限を確認 (`chmod 644 broker.toml`)
    - **Connection failed**: Ethereumネットワーク接続とRPC_URLを確認

@@ -83,8 +83,15 @@ bun install && bun run docs    # http://localhost:5173
 ### Boundlessプロジェクト準備
 ```bash
 # Boundlessプロジェクトの準備（ブローカー使用時に必要）
+# ~/work/bnd-setupと同じレベルに配置
 cd ~/work
 git clone https://github.com/boundless-xyz/boundless.git
+
+# ディレクトリ構造確認
+ls -la ~/work/
+# 正しい構造：
+# ~/work/bnd-setup/    <- このリポジトリ
+# ~/work/boundless/    <- Boundlessプロジェクト
 
 # Boundlessプロジェクトビルド
 cd boundless
