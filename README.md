@@ -50,9 +50,11 @@ curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quic
 ```
 
 このスクリプトが以下を自動実行します：
-1. GitHubリポジトリのクローン
-2. ノード種別の選択
-3. 環境セットアップの実行
+1. システム環境の自動構築（root権限で実行）
+2. 作業用ユーザー（bento）の作成
+3. bnd-setupリポジトリの自動クローン（~/work/bnd-setup）
+4. Docker環境のインストール
+5. 再起動後の手順を表示
 
 ### 手動セットアップ
 

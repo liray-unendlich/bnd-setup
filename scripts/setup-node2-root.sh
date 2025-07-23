@@ -252,35 +252,48 @@ echo
 # ================================
 echo "=== 作業ディレクトリ準備中 ==="
 
-WORK_DIR="/opt/boundless-custom"
+# ユーザーのホームディレクトリに作業ディレクトリを作成
+USER_HOME="/home/$WORK_USER"
+WORK_DIR="$USER_HOME/work"
 mkdir -p "$WORK_DIR"
 chown "$WORK_USER:$WORK_USER" "$WORK_DIR"
 
-# GitHubリポジトリクローン（オプション）
-read -p "GitHubからプロジェクトファイルをクローンしますか？ [y/N]: " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "GitHubリポジトリをクローン中..."
-    cd "$WORK_DIR"
-    
-    # 既存のboundless-customディレクトリがある場合は削除
-    if [ -d "boundless-custom" ]; then
-        rm -rf boundless-custom
-    fi
-    
-    # リポジトリクローン（実際のリポジトリURLに変更してください）
-    if sudo -u "$WORK_USER" git clone https://github.com/boundless-xyz/boundless-custom.git; then
-        echo "✓ GitHubクローン完了"
-        chown -R "$WORK_USER:$WORK_USER" boundless-custom
-    else
-        echo "⚠ GitHubクローンに失敗しました（手動でファイルを配置してください）"
-    fi
+# bnd-setupリポジトリを自動クローン
+echo "※ 進捗: bnd-setupリポジトリをクローン中..."
+cd "$WORK_DIR"
+
+# 既存のbnd-setupディレクトリがある場合は更新
+if [ -d "bnd-setup" ]; then
+    echo "※ 既存のリポジトリを更新中..."
+    cd bnd-setup
+    sudo -u "$WORK_USER" git pull origin main || echo "※ Git pull失敗（続行します）"
 else
-    echo "GitHubクローンをスキップしました"
+    # 新規クローン
+    if sudo -u "$WORK_USER" git clone https://github.com/liray-unendlich/bnd-setup.git; then
+        echo "✓ bnd-setupリポジトリクローン完了"
+        chown -R "$WORK_USER:$WORK_USER" bnd-setup
+        
+        # セットアップ続行の指示を表示
+        echo ""
+        echo "=================================================================="
+        echo "リポジトリの準備が完了しました！"
+        echo "=================================================================="
+        echo "再起動後、$WORK_USER ユーザーでログインして以下を実行："
+        echo ""
+        echo "cd ~/work/bnd-setup"
+        echo "./scripts/setup-dev-environment.sh"
+        echo "=================================================================="
+    else
+        echo "⚠ GitHubクローンに失敗しました"
+        echo "再起動後、手動でクローンしてください："
+        echo "su - $WORK_USER"
+        echo "cd ~/work"
+        echo "git clone https://github.com/liray-unendlich/bnd-setup.git"
+    fi
 fi
 
 echo "作業ディレクトリ: $WORK_DIR"
-echo "✓ 作業ディレクトリ準備完了"
+echo "✓ 作業ディレクトリとリポジトリ準備完了"
 echo
 
 # ================================

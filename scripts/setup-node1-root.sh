@@ -257,12 +257,28 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         rm -rf boundless-custom
     fi
     
-    # リポジトリクローン（実際のリポジトリURLに変更してください）
-    if sudo -u "$WORK_USER" git clone https://github.com/boundless-xyz/boundless-custom.git; then
-        echo "✓ GitHubクローン完了"
-        chown -R "$WORK_USER:$WORK_USER" boundless-custom
+    # bnd-setupリポジトリクローン
+    echo "※ 進捗: bnd-setupリポジトリをクローン中..."
+    if sudo -u "$WORK_USER" git clone https://github.com/liray-unendlich/bnd-setup.git; then
+        echo "✓ bnd-setupリポジトリクローン完了"
+        chown -R "$WORK_USER:$WORK_USER" bnd-setup
+        
+        # セットアップ続行の指示を表示
+        echo ""
+        echo "=================================================================="
+        echo "リポジトリの準備が完了しました！"
+        echo "=================================================================="
+        echo "再起動後、$WORK_USER ユーザーでログインして以下を実行："
+        echo ""
+        echo "cd ~/work/bnd-setup"
+        echo "./scripts/setup-dev-environment.sh"
+        echo "=================================================================="
     else
-        echo "⚠ GitHubクローンに失敗しました（手動でファイルを配置してください）"
+        echo "⚠ GitHubクローンに失敗しました"
+        echo "再起動後、手動でクローンしてください："
+        echo "su - $WORK_USER"
+        echo "cd ~/work"
+        echo "git clone https://github.com/liray-unendlich/bnd-setup.git"
     fi
 else
     echo "GitHubクローンをスキップしました"
