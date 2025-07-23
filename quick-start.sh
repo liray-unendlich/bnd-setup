@@ -22,9 +22,23 @@ echo "1) ノード1 (メインノード: インフラ + API + CPUコンピュー
 echo "2) ノード2 (GPUノード: GPU証明処理専用)"
 echo
 
-read -p "選択してください [1-2]: " -n 1 -r
-echo
-echo
+if [ -t 0 ]; then
+    # 対話的な場合
+    read -p "選択してください [1-2]: " -n 1 -r
+    echo
+    echo
+else
+    # パイプ経由の場合、環境変数で選択
+    echo "パイプ経由での実行を検出しました。"
+    echo "NODE_TYPE環境変数を設定してください: NODE_TYPE=1 または NODE_TYPE=2"
+    echo "例: NODE_TYPE=1 curl -fsSL ... | bash"
+    
+    if [ -z "$NODE_TYPE" ]; then
+        echo "エラー: NODE_TYPE環境変数が設定されていません"
+        exit 1
+    fi
+    REPLY=$NODE_TYPE
+fi
 
 case $REPLY in
     1)
@@ -47,8 +61,13 @@ echo
 # 既存ディレクトリチェック
 if [ -d "$PROJECT_DIR" ]; then
     echo "既存のプロジェクトディレクトリが見つかりました: $PROJECT_DIR"
-    read -p "削除して新しくクローンしますか？ [y/N]: " -n 1 -r
-    echo
+    if [ -t 0 ]; then
+        read -p "削除して新しくクローンしますか？ [y/N]: " -n 1 -r
+        echo
+    else
+        echo "既存ディレクトリを削除して新しくクローンします..."
+        REPLY="y"
+    fi
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         rm -rf "$PROJECT_DIR"
         echo "既存ディレクトリを削除しました"

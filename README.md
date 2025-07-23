@@ -39,12 +39,12 @@ bento-distributed-deploy/
 
 **ノード1（メインノード）で実行:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
+NODE_TYPE=1 curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
 ```
 
 **ノード2（GPUノード）で実行:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
+NODE_TYPE=2 curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
 ```
 
 このスクリプトが以下を自動実行します：
