@@ -1,0 +1,50 @@
+# Boundless Brokerサンプル設定ファイル
+# 実際の使用時は broker.toml にリネームしてください
+
+[broker]
+# ブローカーの基本設定
+name = "boundless-broker"
+enabled = true
+
+[network]
+# ネットワーク設定
+listen_address = "0.0.0.0:8080"
+max_connections = 1000
+
+[market]
+# マーケット設定
+# BOUNDLESS_MARKET_ADDRESS環境変数で上書き可能
+market_address = ""
+
+[verification]
+# 検証設定
+# SET_VERIFIER_ADDRESS環境変数で上書き可能
+verifier_address = ""
+
+[orders]
+# オーダー処理設定
+# ORDER_STREAM_URL環境変数で上書き可能
+stream_url = ""
+batch_size = 100
+timeout_seconds = 30
+
+[database]
+# データベース設定（SQLite）
+# Docker Composeで--db-urlで上書きされます
+path = "/db/broker.db"
+max_connections = 10
+
+[logging]
+# ログ設定
+level = "info"
+format = "json"
+
+[performance]
+# パフォーマンス設定
+worker_threads = 4
+max_queue_size = 10000
+
+# 注意：
+# - 環境変数が設定されている場合、それらが優先されます
+# - 実際の値は .env ファイルから読み込まれます
+# - このファイルをそのまま使用せず、環境に応じて設定を変更してください
