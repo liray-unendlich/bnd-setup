@@ -1,50 +1,313 @@
-# Boundless Brokerサンプル設定ファイル
+# Boundless Broker設定ファイル
 # 実際の使用時は broker.toml にリネームしてください
-
-[broker]
-# ブローカーの基本設定
-name = "boundless-broker"
-enabled = true
-
-[network]
-# ネットワーク設定
-listen_address = "0.0.0.0:8080"
-max_connections = 1000
+# 
+# このファイルはBoundless ZK Prover Brokerの設定テンプレートです
+# 環境変数が設定されている場合、それらが優先されます
 
 [market]
-# マーケット設定
-# BOUNDLESS_MARKET_ADDRESS環境変数で上書き可能
-market_address = ""
+# Mega-cycle価格（ネイティブトークン建て、例：ETH）
+#
+# リクエストされた実行で消費されたmega-cycles（100万RISC-Vサイクル）数に
+# 乗算される価格。プリフライトで計算される。リクエストの最低受諾価格の
+# 決定要因の一つ。
+mcycle_price = "0.000000000010000000"
 
-[verification]
-# 検証設定
-# SET_VERIFIER_ADDRESS環境変数で上書き可能
-verifier_address = ""
+# Mega-cycle価格（Boundlessステーキングトークン建て）
+#
+# 上記のmcycle_priceと同様。ロック期限切れのオーダーなど、ステーキング
+# トークンで支払われるオーダーの最低受諾価格を決定するために使用。
+mcycle_price_stake_token = "0.0000001"
 
-[orders]
-# オーダー処理設定
-# ORDER_STREAM_URL環境変数で上書き可能
-stream_url = ""
-batch_size = 100
-timeout_seconds = 30
+# mcycle制限をバイパスできるアドレスの許可リスト（オプション）
+#
+# 有効にすると、オーダーは制約なしでプリフライトされます。
+priority_requestor_addresses = [
+    "0x48268bE6235A23eb7b67356469362869D5d0293f",
+    "0x0466ACfc0F27bBA9fBB7A8508f576527e81E83Bd",
+]
 
-[database]
-# データベース設定（SQLite）
-# Docker Composeで--db-urlで上書きされます
-path = "/db/broker.db"
-max_connections = 10
+# 証明クラスターの推定ピーク性能（kHz）
+#
+# 証明能力を推定し、プルーバーが処理できる分のみの作業を受け入れるために使用。
+# Bento CLIを使用したベンチマークや、マーケットオーダー処理データから推定可能。
+# 詳細: https://docs.beboundless.xyz/provers/broker#benchmarking-bento
+peak_prove_khz = 700
 
-[logging]
-# ログ設定
-level = "info"
-format = "json"
+# 最大サイクル数（mcycles単位、オプション）
+#
+# この最大サイクル数を超えるオーダーはプリフライト後にスキップされます。
+max_mcycle_limit = 12000
 
-[performance]
-# パフォーマンス設定
-worker_threads = 4
-max_queue_size = 10000
+# 最大ジャーナルサイズ（バイト）
+#
+# プリフライトでこのサイズより大きなジャーナルを生成するオーダーはスキップされます。
+# ジャーナルはリクエスト完了のためにオンチェーンに投稿する必要があるため、
+# 過度に大きなジャーナルはリクエストの完了を妨げる可能性があります。
+max_journal_bytes = 10000
 
-# 注意：
-# - 環境変数が設定されている場合、それらが優先されます
-# - 実際の値は .env ファイルから読み込まれます
-# - このファイルをそのまま使用せず、環境に応じて設定を変更してください
+# デッドラインまでの最小秒数（リクエストへの入札を検討するため）
+#
+# デッドラインまでの時間が十分でない場合、プルーバーはリクエストの証明を
+# 完了し、期限切れ前にバッチを公開できない可能性があります。
+min_deadline = 300
+
+# 起動時に可能なオープンオーダーを検索するブロック数
+lookback_blocks = 300 # 300ブロック ≈ 1時間（12秒ブロック時間）
+
+# 最大ステーク量（Boundlessステーキングトークン建て）
+#
+# これより高いステークを要求するリクエストは考慮されません。
+max_stake = "25" # USDC
+
+# リクエストURLからのダウンロード許可最大入力/イメージファイルサイズ
+max_file_size = 50_000_000
+
+# URLからの入力/イメージ内容取得の最大リトライ回数
+#max_fetch_retries = 2
+
+# 最大同時ロック数
+#
+# 同時に処理できる証明の最大数
+max_concurrent_proofs = 1
+
+# 価格設定で同時に作業するオーダーの最大数
+#
+# システムの圧迫を防ぐため、生成される価格設定タスクを制限するために使用
+max_concurrent_preflights = 4
+
+# オーダー価格設定優先モード
+#
+# 価格設定のためのオーダー優先順位を決定。オプション：
+# - "random": ランダム順序でオーダーを処理してプルーバー間の競争を分散（デフォルト）
+# - "observation_time": 観察された順序でオーダーを処理（FIFO）
+# - "shortest_expiry": 最短期限順でオーダーを処理（最も早いデッドライン）
+order_pricing_priority = "observation_time"
+
+# オーダーコミット優先モード
+#
+# 証明にコミットする際のオーダー優先順位を決定。オプション：
+# - "random": ランダム順序でオーダーを処理してプルーバー間の競争を分散（デフォルト）
+# - "shortest_expiry": 最短期限順でオーダーを処理（lock-and-fulfillオーダーはロック期限、その他はリクエスト期限）
+#order_commitment_priority = "random"
+
+# FulfillAfterLockExpireオーダーの処理を無効化
+#
+# trueに設定すると、ブローカーはすべてのFulfillAfterLockExpireタイプオーダーを
+# スキップし、LockAndFulfillオーダーのみを処理します
+disable_fulfill_after_lock_expire = true
+
+# オフチェーンオーダーストリーム監視を無効化
+#
+# trueに設定すると、ブローカーはオフチェーンオーダーストリームWebSocketに
+# 接続しません。これにより他のアプリケーション（fast-offchain-reactorなど）が
+# 単一の許可された接続を使用できます。
+# ブローカーは通常通りオンチェーンイベントからオーダーを処理します。
+# デフォルト: false
+disable_offchain_order_stream = false
+
+# 回復可能な障害での最大クリティカルタスクリトライ回数
+#
+# ブローカーサービスには多数のサブタスクがあり、一部はクリティカルとみなされます。
+# タスクが失敗した場合、リトライされますが、この回数のリトライ後、プロセスは終了します。
+max_critical_task_retries = 10
+
+# 顧客アドレスの許可リスト（オプション）
+#
+# 有効にすると、許可リストにないクライアントからのすべてのリクエストがスキップされます。
+allow_client_addresses = [
+    "0x2546c553d857d20658ece248f7c7d0861a240681",
+    "0xc2db89b2bd434ceac6c74fbc0b2ad3a280e66db0",
+    "0x734dF7809c4ef94Da037449C287166D114503198",
+    "0x3Ee7d9175eC8BB9e16e8FD3AbDEF5a354b247528"
+]
+
+# 有効にすると、拒否リストのクライアントからのすべてのリクエストがスキップされます。
+#deny_requestor_addresses = []
+
+# ロック優先ガス（wei単位）
+#
+# 設定されている場合、この値がロックトランザクションのベースガス価格に追加されます。
+# 例：400000000 = 0.4 Gwei
+lock_priority_gas = 400000000
+
+# オプション残高警告閾値（ネイティブトークン）
+#
+# 送信者残高がこれを下回ると、ブローカーは警告ログを発行します
+balance_warn_threshold = "0.1"
+
+# オプション残高エラー閾値（ネイティブトークン）
+#
+# 送信者残高がこれを下回ると、ブローカーはエラーログを発行します
+balance_error_threshold = "0.05"
+
+# オプションステーク残高警告閾値（ステークトークン）
+#
+# ステーク残高がこれを下回ると、ブローカーは警告ログを発行します
+stake_balance_warn_threshold = "10"
+
+# オプションステーク残高エラー閾値（ステークトークン）
+#
+# ステーク残高がこれを下回ると、ブローカーはエラーログを発行します
+stake_balance_error_threshold = "5"
+
+# ダウンロードしたイメージと入力を保存するオプションキャッシュディレクトリ
+#
+# 設定されていない場合、ファイルは毎回再ダウンロードされます
+#cache_dir = "./cache"
+
+# lockin呼び出しのガス推定
+#
+# 価格設定中のオーダーに関連するガス費用を推定するために使用。
+# 設定されていない場合、保守的なデフォルトが使用されます。
+lockin_gas_estimate = 200000
+
+# fulfill呼び出しのガス推定
+#
+# 価格設定中のオーダーに関連するガス費用を推定するために使用。
+# 設定されていない場合、保守的なデフォルトが使用されます。
+fulfill_gas_estimate = 750000
+
+# RiscZeroGroth16Verifierを使用した証明検証のガス推定
+#
+# 価格設定中のオーダーに関連するガス費用を推定するために使用。
+# 設定されていない場合、保守的なデフォルトが使用されます。
+#groth16_verify_gas_estimate = 250000
+
+# === タイミング制御設定 ===
+
+# オーダーロックのタイミングモード
+# "timestamp"（デフォルト）: pre_lock_wait_msを使用した従来のタイムスタンプベースタイミング
+# "block": MEV保護のためのブロックベース精密タイミング制御
+timing_mode = "timestamp"
+
+## wait_for_target_price動作の設定
+# オーダー価格が最低利益閾値（mcycle_price）に達するまで待機するかどうか
+#
+# wait_for_target_price = true の場合：
+#   - システムはオーダー価格がmcycle_price閾値に達するまで待機
+#   - その後、計算されたタイミングでトランザクションを送信
+#
+# wait_for_target_price = false の場合：
+#   - "timestamp"モード：現在時刻からpre_lock_wait_ms遅延を使用
+#   - "block"モード：オーダー価格が非ゼロになる時を計算し、block_offsetを適用
+#     * minPrice > 0：biddingStart時刻をターゲットとして使用
+#     * minPrice = 0：価格がガス費用を超える時を計算
+wait_for_target_price = false
+
+## タイムスタンプモード設定
+# オーダーモニター ポーリング間隔（ミリ秒）
+# オーダーモニターがロック/証明準備完了オーダーを確認する頻度。
+# 低い値は遅延を減らしますが、CPU使用量が増加します。
+# 例：100 = 100ms、1000 = 1秒（デフォルト：2000 = 2秒）
+order_monitor_interval_ms = 250
+
+# プリロック待機時間（ミリ秒）(wait_for_target_price = falseのタイムスタンプモードでのみ使用)
+# 競争を避けるため、オーダーをロックする前にこの時間待機
+# 例：500 = 0.5秒、2000 = 2秒（デフォルト：0 = 待機なし）
+pre_lock_wait_ms = 0
+
+## ブロックモード設定
+# ブロックオフセット（ブロックモードでのみ使用）
+# ターゲットブロックからのトランザクション送信オフセット
+# - ターゲットブロックはオーダーが利益/非ゼロになる時に基づいて計算
+# - 負の値は早期送信（高競争環境に適している）
+# - 正の値は遅延送信（低競争環境に適している）
+# 例：
+#   -3 = ターゲットの3ブロック前に送信（デフォルト、MEV保護に適している）
+#    0 = ターゲットブロックで正確に送信
+#    2 = ターゲットの2ブロック後に送信
+block_offset = -3
+
+[prover]
+# オプション設定、bonsaiを使用する場合はここでzkVMバージョンを設定
+bonsai_r0_zkvm_ver = "2.1.0"
+
+# 証明ステータスをポーリングするリトライ回数
+#
+# 一時的な障害に対して少し耐久性を提供します。
+status_poll_retry_count = 3
+
+# 証明ステータス監視のポーリング間隔（ミリ秒）
+status_poll_ms = 1000
+
+# 障害時にプルーバーバックエンドにクエリするリトライ回数
+#
+# プルーバーバックエンドへのAPIリクエスト、セッション作成、プリフライト、
+# イメージアップロードなどに使用。一時的な障害に対して少し耐久性を提供します。
+req_retry_count = 3
+
+# リトライ間のスリープ時間（ミリ秒）
+req_retry_sleep_ms = 500
+
+# 証明生成プロセス全体の実行リトライ回数
+#
+# これはリクエストリトライ回数とは別で、証明プロセスは証明ジョブを作成し、
+# 証明ジョブの完了をポーリングする複数のAPIコールを含む多段階プロセスです。
+proof_retry_count = 1
+
+# 証明リトライ間のスリープ時間（ミリ秒）
+proof_retry_sleep_ms = 500
+
+# ビルダーゲストプログラム（ELF）パスを設定
+#
+# 耐久デプロイメントを使用する場合、これをシステム上の公開された
+# 現在のSOTゲストプログラムパスに設定します
+#set_builder_guest_path = "./target/riscv-guest/guest-set-builder/set-builder/riscv32im-risc0-zkvm-elf/release/set-builder.bin"
+
+# アセッサーELFパス
+#assessor_set_guest_path = "./target/riscv-guest/guest-assessor/assessor-guest/riscv32im-risc0-zkvm-elf/release/assessor-guest.bin"
+
+# 期限切れコミット済みオーダーをチェックする間隔（秒）
+#
+# これはReaperTaskが期限切れオーダーをチェックし、失敗としてマークする間隔です。
+# 設定されていない場合、デフォルトで60秒になります。
+#reaper_interval_secs = 60
+
+# 期限切れオーダーを失敗としてマークする前の猶予期間（秒）
+#
+# これはオーダーが期限切れになった後、reaperが失敗としてマークする前の
+# バッファ時間を提供します。これはオーダーを処理している可能性のある
+# アグリゲーターとの競合状態を防ぐのに役立ちます。
+# 設定されていない場合、デフォルトで10800秒（3時間）になります。
+# reaper_grace_period_secs = 10800
+
+[batcher]
+# 公開前の最大バッチ持続時間（秒）
+batch_max_time = 1000
+
+# 公開前のバッチサイズ（証明数）
+min_batch_size = 1
+
+# バッチブロック時間バッファ
+#
+# オーダーバッチ内の最低ブロックデッドラインの前の秒数で
+# バッチをフラッシュします。これはおよそ snark_proving_time * 2 であるべきです
+block_deadline_buffer_secs = 180
+
+# トランザクション確認のタイムアウト（秒）
+txn_timeout = 45
+
+# submit_merkle / fulfill_batchを単一トランザクションにバッチ化する
+# 単一TXN送信を使用
+#
+# 単一トランザクション。デプロイされたコントラクトに`submitRootAndFulfill`メソッドが
+# 存在する必要があります
+single_txn_fulfill = true
+
+# 履行時にプルーバー残高から引き出すかどうか
+withdraw = false
+
+# ポーリング時間（ミリ秒）
+#
+# 集約する新しいオーダーのポーリング間隔と、バッチ完了条件を
+# チェックする頻度
+#batch_poll_time_ms = 500
+
+# 超過時に公開をトリガーする最大結合ジャーナルサイズ（バイト）
+#batch_max_journal_bytes = 10000
+
+# 公開前の最大バッチ手数料（ETH）
+#batch_max_fees = "0.1"
+
+# バッチを放棄する前の送信試行回数
+#max_submission_attempts = 2
