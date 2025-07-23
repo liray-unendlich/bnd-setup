@@ -11,10 +11,10 @@ echo "GitHubリポジトリをクローンして環境セットアップを開�
 echo
 
 # 設定
-REPO_URL="https://github.com/boundless-xyz/boundless-custom.git"  # 実際のリポジトリURLに変更
+REPO_URL="https://github.com/liray-unendlich/bnd-setup.git"
 BRANCH="main"
-PROJECT_DIR="boundless-custom"
-DEPLOY_DIR="bento-distributed-deploy"
+PROJECT_DIR="bnd-setup"
+DEPLOY_DIR=""
 
 # ノード種別選択
 echo "デプロイするノードの種別を選択してください:"
@@ -64,13 +64,15 @@ else
     cd "$PROJECT_DIR"
 fi
 
-# デプロイディレクトリに移動
-if [ ! -d "$DEPLOY_DIR" ]; then
+# デプロイディレクトリに移動（既にルートディレクトリにいる場合はそのまま）
+if [ -n "$DEPLOY_DIR" ] && [ ! -d "$DEPLOY_DIR" ]; then
     echo "エラー: デプロイディレクトリが見つかりません: $DEPLOY_DIR"
     exit 1
 fi
 
-cd "$DEPLOY_DIR"
+if [ -n "$DEPLOY_DIR" ]; then
+    cd "$DEPLOY_DIR"
+fi
 echo "作業ディレクトリ: $(pwd)"
 echo
 

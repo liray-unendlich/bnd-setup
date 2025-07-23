@@ -39,12 +39,12 @@ bento-distributed-deploy/
 
 **ノード1（メインノード）で実行:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_REPO/main/bento-distributed-deploy/quick-start.sh | bash
+curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
 ```
 
 **ノード2（GPUノード）で実行:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_REPO/main/bento-distributed-deploy/quick-start.sh | bash
+curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
 ```
 
 このスクリプトが以下を自動実行します：
@@ -56,8 +56,8 @@ curl -fsSL https://raw.githubusercontent.com/YOUR_REPO/main/bento-distributed-de
 
 **1. リポジトリクローン:**
 ```bash
-git clone https://github.com/YOUR_REPO/boundless-custom.git
-cd boundless-custom/bento-distributed-deploy
+git clone https://github.com/liray-unendlich/bnd-setup.git
+cd bnd-setup
 ```
 
 **2. rootセットアップ（各ノードで1回のみ）:**
