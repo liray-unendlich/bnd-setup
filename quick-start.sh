@@ -128,6 +128,10 @@ if [ "$EUID" -eq 0 ]; then
     echo "cd $(pwd)"
     echo "./scripts/setup-dev-environment.sh"
     echo
+    echo "※ セットアップが中断した場合："
+    echo "  - ログを確認: cat /var/log/setup-node*.log"
+    echo "  - 再実行: 同じスクリプトを再度実行してください"
+    echo
     echo "システム再起動中..."
     sleep 3
     reboot

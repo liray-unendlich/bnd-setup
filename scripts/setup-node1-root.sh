@@ -4,8 +4,15 @@
 
 set -e
 
+# ログファイルの設定
+LOG_FILE="/var/log/setup-node1-$(date +%Y%m%d_%H%M%S).log"
+exec 1> >(tee -a "$LOG_FILE")
+exec 2>&1
+
 echo "=================================================================="
 echo "RISC Zero Bento ノード1（メインノード） 完全セットアップスクリプト"
+echo "=================================================================="
+echo "ログファイル: $LOG_FILE"
 echo "=================================================================="
 echo "このスクリプトは以下を自動実行します:"
 echo "1. システムアップデート"
@@ -54,8 +61,30 @@ echo
 # システムアップデート
 # ================================
 echo "=== システムアップデート実行中 ==="
-apt-get update -y
-apt-get upgrade -y
+echo "※ この処理には時間がかかる場合があります（5-10分程度）"
+echo "※ 進捗: パッケージリスト更新中..."
+
+# タイムアウト対策とエラーハンドリング
+export DEBIAN_FRONTEND=noninteractive
+
+# リトライ機能付きアップデート
+RETRY_COUNT=0
+MAX_RETRIES=3
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if apt-get update -y -qq; then
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        echo "パッケージリスト更新失敗 (試行 $RETRY_COUNT/$MAX_RETRIES)。リトライ中..."
+        sleep 5
+    fi
+done
+
+echo "※ 進捗: システムパッケージ更新中..."
+apt-get upgrade -y -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" || {
+    echo "※ 一部のパッケージ更新に失敗しましたが、続行します"
+}
+
 echo "✓ システムアップデート完了"
 echo
 
@@ -63,24 +92,42 @@ echo
 # 必要パッケージインストール
 # ================================
 echo "=== 基本パッケージインストール中 ==="
-apt-get install -y \
-    curl \
-    wget \
-    git \
-    vim \
-    htop \
-    unzip \
-    software-properties-common \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-release \
-    ufw \
-    redis-tools \
-    postgresql-client \
-    jq \
-    net-tools \
+echo "※ インストールするパッケージ数: 約15個"
+echo "※ この処理には時間がかかる場合があります（3-5分程度）"
+
+# パッケージリスト
+PACKAGES=(
+    curl
+    wget
+    git
+    vim
+    htop
+    unzip
+    software-properties-common
+    apt-transport-https
+    ca-certificates
+    gnupg
+    lsb-release
+    ufw
+    redis-tools
+    postgresql-client
+    jq
+    net-tools
     telnet
+)
+
+# 進捗表示付きインストール
+TOTAL=${#PACKAGES[@]}
+CURRENT=0
+for package in "${PACKAGES[@]}"; do
+    CURRENT=$((CURRENT + 1))
+    echo -n "※ 進捗: [$CURRENT/$TOTAL] $package をインストール中..."
+    if apt-get install -y -qq "$package" > /dev/null 2>&1; then
+        echo " ✓"
+    else
+        echo " ⚠ (スキップ)"
+    fi
+done
 
 echo "✓ 基本パッケージインストール完了"
 echo
@@ -89,22 +136,49 @@ echo
 # Dockerインストール
 # ================================
 echo "=== Docker & Docker Composeインストール中 ==="
+echo "※ この処理には時間がかかる場合があります（5-10分程度）"
 
 # 既存のDockerを削除
-apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+echo "※ 進捗: 既存のDockerを削除中..."
+apt-get remove -y -qq docker docker-engine docker.io containerd runc 2>/dev/null || true
 
 # Dockerの公式GPGキー追加
+echo "※ 進捗: Docker GPGキーを追加中..."
 mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/$ID/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
 # Dockerリポジトリ追加
+echo "※ 進捗: Dockerリポジトリを設定中..."
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$ID \
   $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # パッケージ更新とDockerインストール
-apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+echo "※ 進捗: Dockerパッケージリストを更新中..."
+apt-get update -y -qq
+
+echo "※ 進捗: Docker本体をインストール中..."
+echo "※ インストールするコンポーネント:"
+echo "  - Docker CE (Community Edition)"
+echo "  - Docker CLI"
+echo "  - containerd"
+echo "  - Docker Compose Plugin"
+
+apt-get install -y -qq \
+    docker-ce \
+    docker-ce-cli \
+    containerd.io \
+    docker-buildx-plugin \
+    docker-compose-plugin \
+    || {
+        echo "Docker インストール失敗。リトライ中..."
+        apt-get install -y --fix-missing \
+            docker-ce \
+            docker-ce-cli \
+            containerd.io \
+            docker-buildx-plugin \
+            docker-compose-plugin
+    }
 
 # Dockerサービス開始・自動起動設定
 systemctl start docker
