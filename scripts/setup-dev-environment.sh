@@ -129,13 +129,29 @@ else
     # PATHに追加（現在のセッション用）
     export PATH="$HOME/.local/bin:$PATH"
     
+    # シェル環境を更新
+    source ~/.bashrc 2>/dev/null || true
+    source ~/.zshrc 2>/dev/null || true
+    
     # rzupを使ってtoolchainインストール
+    echo "※ 進捗: rzupでRISC Zero toolchainをインストール中..."
     if command -v rzup &> /dev/null; then
         rzup install
     else
-        # 代替方法
-        cargo install cargo-risczero
-        cargo risczero install
+        # PATHを明示的に更新して再試行
+        export PATH="$HOME/.local/bin:$PATH"
+        if [ -f "$HOME/.local/bin/rzup" ]; then
+            echo "※ rzupが見つかりました。インストール実行中..."
+            "$HOME/.local/bin/rzup" install
+        else
+            echo "⚠ rzupが見つかりません。手動実行が必要です："
+            echo "  source ~/.bashrc"
+            echo "  rzup install"
+            echo ""
+            echo "または以下のコマンドを実行："
+            echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+            echo "  rzup install"
+        fi
     fi
     
     echo "✓ RISC Zero toolchainインストール完了"
@@ -143,11 +159,26 @@ fi
 
 # 動作確認
 echo "RISC Zero toolchain確認中..."
-if cargo risczero --version; then
-    echo "✓ RISC Zero toolchain動作確認完了"
+# PATHを再設定
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
+if command -v cargo-risczero &> /dev/null; then
+    echo "※ cargo-risczero コマンドが見つかりました"
+    if cargo risczero --version 2>/dev/null; then
+        echo "✓ RISC Zero toolchain動作確認完了"
+    else
+        echo "⚠ cargo risczero コマンドが動作しません"
+        echo "以下を手動で実行してください："
+        echo "  source ~/.bashrc"
+        echo "  rzup install"
+        echo "  cargo risczero --version"
+    fi
 else
     echo "⚠ RISC Zero toolchainの確認に失敗しました"
-    echo "シェル再起動後に再確認してください"
+    echo "以下を手動で実行してください："
+    echo "  source ~/.bashrc"
+    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo "  rzup install"
 fi
 echo
 
@@ -348,3 +379,22 @@ EOF
 
 chmod +x check-dev-env.sh
 echo "確認用スクリプトを生成しました: ./check-dev-env.sh"
+echo
+echo "=================================================================="
+echo "⚠️  RISC Zero toolchainで問題が発生した場合の対処法"
+echo "=================================================================="
+echo "エラー: 'Run \`rzup install\` instead' が出た場合："
+echo
+echo "1. シェル環境を再読み込み："
+echo "   source ~/.bashrc"
+echo
+echo "2. PATHを確認・設定："
+echo "   export PATH=\"\$HOME/.local/bin:\$PATH\""
+echo
+echo "3. rzup installを手動実行："
+echo "   rzup install"
+echo
+echo "4. 確認："
+echo "   cargo risczero --version"
+echo
+echo "=================================================================="
