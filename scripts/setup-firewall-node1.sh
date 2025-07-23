@@ -53,15 +53,9 @@ sudo ufw default allow outgoing
 sudo ufw allow ssh
 echo "✓ SSH (22) 許可"
 
-# 外部アクセス用ポート開放
-sudo ufw allow 8081/tcp comment "REST API"
-echo "✓ REST API (8081) 許可"
-
+# 外部アクセス用ポート開放（Grafanaのみ）
 sudo ufw allow 3000/tcp comment "Grafana Dashboard"
 echo "✓ Grafana (3000) 許可"
-
-sudo ufw allow 9001/tcp comment "MinIO Console"
-echo "✓ MinIO Console (9001) 許可"
 
 # ノード2からのアクセス許可
 sudo ufw allow from $NODE2_IP to any port 5432 comment "PostgreSQL from Node2"
@@ -72,6 +66,12 @@ echo "✓ Redis (6379) from $NODE2_IP 許可"
 
 sudo ufw allow from $NODE2_IP to any port 9000 comment "MinIO from Node2"
 echo "✓ MinIO (9000) from $NODE2_IP 許可"
+
+sudo ufw allow from $NODE2_IP to any port 8081 comment "REST API from Node2"
+echo "✓ REST API (8081) from $NODE2_IP 許可"
+
+sudo ufw allow from $NODE2_IP to any port 9001 comment "MinIO Console from Node2"
+echo "✓ MinIO Console (9001) from $NODE2_IP 許可"
 
 # ファイアウォール有効化
 echo
@@ -87,12 +87,12 @@ echo
 echo "=== 設定内容 ==="
 echo "許可されたポート:"
 echo "  - SSH (22): 全てから"
-echo "  - REST API (8081): 全てから"  
 echo "  - Grafana (3000): 全てから"
-echo "  - MinIO Console (9001): 全てから"
 echo "  - PostgreSQL (5432): $NODE2_IP から"
 echo "  - Redis (6379): $NODE2_IP から"
 echo "  - MinIO (9000): $NODE2_IP から"
+echo "  - REST API (8081): $NODE2_IP から"
+echo "  - MinIO Console (9001): $NODE2_IP から"
 echo
 
 echo "=== 注意事項 ==="
