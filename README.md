@@ -137,11 +137,14 @@ cd ~/work/bnd-setup
 
 # 2. 環境変数ファイル編集
 vi node1-main/.env
-# 以下を設定:
+# 必須設定項目:
 # - POSTGRES_PASSWORD=強力なパスワード
 # - MINIO_ROOT_PASS=強力なパスワード
-# - PRIVATE_KEY=0x... （ブローカー使用時のみ）
-# - RPC_URL=https://... （ブローカー使用時のみ）
+# ブローカー使用時のみ:
+# - PRIVATE_KEY=0x...
+# - RPC_URL=https://...
+# - WS_RPC_URL=wss://...
+# （コントラクトアドレス等はデフォルト値設定済み）
 
 # 3. ファイアウォール設定
 ./scripts/setup-firewall-node1.sh

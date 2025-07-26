@@ -69,11 +69,14 @@ if [ "$NODE_TYPE" = "node1" ]; then
     ENV_FILE="node1-main/.env"
     echo "ノード1の環境変数を設定します: $ENV_FILE"
     echo
-    echo "重要な設定項目:"
+    echo "必須設定項目:"
     echo "- POSTGRES_PASSWORD: データベースパスワード（強力なものを設定）"
     echo "- MINIO_ROOT_PASS: MinIOパスワード（強力なものを設定）"
-    echo "- PRIVATE_KEY: ブローカー用秘密鍵（ブローカー使用時のみ）"
-    echo "- RPC_URL: RPC接続URL（ブローカー使用時のみ）"
+    echo "ブローカー使用時のみ:"
+    echo "- PRIVATE_KEY: ブローカー用秘密鍵"
+    echo "- RPC_URL: RPC接続URL"
+    echo "- WS_RPC_URL: WebSocket RPC URL"
+    echo "（※ コントラクトアドレス・ORDER_STREAM_URLはデフォルト値設定済み）"
 else
     ENV_FILE="node2-gpu/.env"
     echo "ノード2の環境変数を設定します: $ENV_FILE"
@@ -168,7 +171,9 @@ if [ "$NODE_TYPE" = "node1" ]; then
     sleep 5
     
     echo "--- サービス状態確認 ---"
+    cd node1-main
     docker-compose ps
+    cd ..
     echo
     
     echo "--- API動作確認 ---"
@@ -190,7 +195,9 @@ else
     sleep 5
     
     echo "--- GPU証明エージェント確認 ---"
+    cd node2-gpu
     docker-compose ps | grep gpu_prove_agent
+    cd ..
     echo
     
     echo "--- GPU使用状況確認 ---"
