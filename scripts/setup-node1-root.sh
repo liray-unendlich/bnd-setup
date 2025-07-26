@@ -241,29 +241,66 @@ echo
 # ================================
 echo "=== 作業ディレクトリ準備中 ==="
 
-WORK_DIR="/opt/boundless-custom"
+# ユーザーホームディレクトリにworkディレクトリ作成
+USER_HOME="/home/$WORK_USER"
+WORK_DIR="$USER_HOME/work"
 mkdir -p "$WORK_DIR"
-chown "$WORK_USER:$WORK_USER" "$WORK_DIR"
+chown -R "$WORK_USER:$WORK_USER" "$WORK_DIR"
 
-# GitHubリポジトリクローン（オプション）
-read -p "GitHubからプロジェクトファイルをクローンしますか？ [y/N]: " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "GitHubリポジトリをクローン中..."
-    cd "$WORK_DIR"
+echo "作業ディレクトリを作成しました: $WORK_DIR"
+
+# 現在のbnd-setupディレクトリをユーザーのworkディレクトリにコピー
+CURRENT_DIR="$(pwd)"
+if [[ "$CURRENT_DIR" == *"bnd-setup"* ]]; then
+    echo "※ 進捗: bnd-setupディレクトリをユーザーホームにコピー中..."
     
-    # 既存のboundless-customディレクトリがある場合は削除
-    if [ -d "boundless-custom" ]; then
-        rm -rf boundless-custom
+    # bnd-setupプロジェクトのルートディレクトリを特定
+    BND_SETUP_ROOT="$CURRENT_DIR"
+    while [[ "$BND_SETUP_ROOT" != "/" && ! -f "$BND_SETUP_ROOT/README.md" ]]; do
+        BND_SETUP_ROOT=$(dirname "$BND_SETUP_ROOT")
+    done
+    
+    if [ -f "$BND_SETUP_ROOT/README.md" ]; then
+        # 既存のbnd-setupディレクトリがある場合は削除
+        if [ -d "$WORK_DIR/bnd-setup" ]; then
+            rm -rf "$WORK_DIR/bnd-setup"
+        fi
+        
+        # bnd-setupディレクトリをコピー
+        cp -r "$BND_SETUP_ROOT" "$WORK_DIR/"
+        chown -R "$WORK_USER:$WORK_USER" "$WORK_DIR/bnd-setup"
+        
+        echo "✓ bnd-setupディレクトリのコピー完了"
+        echo "場所: $WORK_DIR/bnd-setup"
+        
+        # セットアップ続行の指示を表示
+        echo ""
+        echo "=================================================================="
+        echo "プロジェクトの準備が完了しました！"
+        echo "=================================================================="
+        echo "再起動後、$WORK_USER ユーザーでログインして以下を実行："
+        echo ""
+        echo "cd ~/work/bnd-setup"
+        echo "./scripts/setup-dev-environment.sh"
+        echo "=================================================================="
+    else
+        echo "⚠ bnd-setupプロジェクトルートが見つかりませんでした"
+        echo "再起動後、手動でクローンしてください："
+        echo "su - $WORK_USER"
+        echo "cd ~/work"
+        echo "git clone https://github.com/liray-unendlich/bnd-setup.git"
     fi
+else
+    echo "⚠ 現在のディレクトリがbnd-setupプロジェクト内ではありません"
+    echo "GitHubからクローンします..."
     
     # bnd-setupリポジトリクローン
     echo "※ 進捗: bnd-setupリポジトリをクローン中..."
+    cd "$WORK_DIR"
     if sudo -u "$WORK_USER" git clone https://github.com/liray-unendlich/bnd-setup.git; then
         echo "✓ bnd-setupリポジトリクローン完了"
         chown -R "$WORK_USER:$WORK_USER" bnd-setup
         
-        # セットアップ続行の指示を表示
         echo ""
         echo "=================================================================="
         echo "リポジトリの準備が完了しました！"
@@ -280,11 +317,8 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "cd ~/work"
         echo "git clone https://github.com/liray-unendlich/bnd-setup.git"
     fi
-else
-    echo "GitHubクローンをスキップしました"
 fi
 
-echo "作業ディレクトリ: $WORK_DIR"
 echo "✓ 作業ディレクトリ準備完了"
 echo
 

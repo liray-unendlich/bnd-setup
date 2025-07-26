@@ -83,27 +83,9 @@ RUST_LOG=info
 
 ---
 
-## 🔧 事前準備（GitHub設定）
+## 🚀 完全セットアップガイド
 
-**カスタムBoundlessリポジトリを使用する場合（ブローカー使用時）:**
-```bash
-# GitHub認証設定
-./scripts/setup-github-config.sh
-```
-
-または環境変数で設定:
-```bash
-export GITHUB_USERNAME=your_username
-export GITHUB_TOKEN=your_token
-export BOUNDLESS_REPO_URL=github.com/0xmakase/boundless-custom.git
-export BOUNDLESS_BRANCH=chore/new-order-lock-feature
-```
-
----
-
-## 🚀 超簡単セットアップ（推奨）
-
-### ワンライナーでセットアップ開始
+### ステップ1: 初期セットアップ（root実行）
 
 **ノード1（メインノード）で実行:**
 ```bash
@@ -122,7 +104,105 @@ curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quic
 2. 作業用ユーザー（bento）の作成
 3. bnd-setupリポジトリの自動クローン（~/work/bnd-setup）
 4. Docker環境のインストール
-5. 再起動後の手順を表示
+5. **自動的にシステム再起動**
+
+### ステップ2: 作業用ユーザーでのセットアップ
+
+**システム再起動後、作業用ユーザー（bento）でログイン:**
+
+#### 🎯 統合セットアップ（推奨）
+```bash
+cd ~/work/bnd-setup
+./scripts/complete-setup.sh
+```
+
+このスクリプトが以下を**対話的に**実行します：
+1. 開発環境セットアップ
+2. 環境変数ファイル編集支援
+3. GitHub認証設定（ブローカー使用時）
+4. ファイアウォール設定
+5. サービス起動
+6. 動作確認
+
+#### 📋 個別セットアップ（上級者向け）
+
+<details>
+<summary>個別セットアップ手順を表示</summary>
+
+**ノード1（メインノード）の場合:**
+```bash
+# 1. 開発環境セットアップ
+cd ~/work/bnd-setup
+./scripts/setup-dev-environment.sh
+
+# 2. 環境変数ファイル編集
+vi node1-main/.env
+# 以下を設定:
+# - POSTGRES_PASSWORD=強力なパスワード
+# - MINIO_ROOT_PASS=強力なパスワード
+# - PRIVATE_KEY=0x... （ブローカー使用時のみ）
+# - RPC_URL=https://... （ブローカー使用時のみ）
+
+# 3. ファイアウォール設定
+./scripts/setup-firewall-node1.sh
+
+# 4. サービス起動
+./scripts/deploy-node1.sh
+```
+
+**ノード2（GPUノード）の場合:**
+```bash
+# 1. 開発環境セットアップ
+cd ~/work/bnd-setup
+./scripts/setup-dev-environment.sh
+
+# 2. 環境変数ファイル編集
+vi node2-gpu/.env
+# NODE1_IP=実際のノード1のIPアドレス
+# パスワード類をノード1と同じ値に設定
+
+# 3. ファイアウォール設定
+./scripts/setup-firewall-node2.sh
+
+# 4. サービス起動
+./scripts/deploy-node2.sh
+```
+
+</details>
+
+### ステップ3: 動作確認
+
+#### ノード1での確認:
+```bash
+# サービス状態確認
+docker-compose ps
+
+# API動作確認
+curl http://localhost:8081/health
+
+# Grafana確認（ブラウザで）
+# http://[ノード1のIP]:3000
+```
+
+#### ノード2での確認:
+```bash
+# GPU証明エージェント確認
+docker-compose ps | grep gpu_prove_agent
+
+# GPU使用状況確認
+nvidia-smi
+```
+
+### ステップ4: ブローカー設定（オプション・本格運用時）
+
+**自動化されたZK証明マーケットプレイス参加を行う場合:**
+
+💡 **統合セットアップスクリプト使用時**: GitHub認証設定は自動的に対話形式で実行されます
+
+**手動でブローカー設定する場合:**
+```bash
+# 詳細手順は「ブローカー起動（本格運用）」セクションを参照
+```
 
 ### 手動セットアップ
 

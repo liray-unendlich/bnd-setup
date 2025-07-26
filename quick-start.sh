@@ -109,6 +109,10 @@ echo
 if [ "$EUID" -eq 0 ]; then
     echo "rootユーザーでの実行が検出されました"
     
+    # 現在のディレクトリ（bnd-setupプロジェクト）を保存
+    CURRENT_BND_SETUP_DIR="$(pwd)"
+    echo "現在のbnd-setupディレクトリ: $CURRENT_BND_SETUP_DIR"
+    
     # rootセットアップ実行
     if [ "$NODE_TYPE" = "node1" ]; then
         echo "ノード1のrootセットアップを実行します..."
@@ -118,15 +122,43 @@ if [ "$EUID" -eq 0 ]; then
         ./scripts/setup-node2-root.sh
     fi
     
+    # bentoユーザー用にbnd-setupをクローン・権限変更
+    WORK_USER="bento"
+    USER_HOME="/home/$WORK_USER"
+    WORK_DIR="$USER_HOME/work"
+    
+    echo
+    echo "=== bentoユーザー用bnd-setupセットアップ ==="
+    
+    # workディレクトリ作成
+    mkdir -p "$WORK_DIR"
+    
+    # 既存のbnd-setupディレクトリがある場合は削除
+    if [ -d "$WORK_DIR/bnd-setup" ]; then
+        rm -rf "$WORK_DIR/bnd-setup"
+        echo "既存のbnd-setupディレクトリを削除しました"
+    fi
+    
+    # 現在のbnd-setupディレクトリを丸ごとコピー
+    cp -r "$CURRENT_BND_SETUP_DIR" "$WORK_DIR/"
+    
+    # bentoユーザーに権限変更
+    chown -R "$WORK_USER:$WORK_USER" "$WORK_DIR"
+    
+    echo "✓ bnd-setupをコピーしました: $WORK_DIR/bnd-setup"
+    echo "✓ 権限をbentoユーザーに変更しました"
+    
     echo
     echo "=================================================================="
     echo "rootセットアップ完了！"
     echo "=================================================================="
-    echo "システムを再起動してから、作業用ユーザー（デフォルト: bento）でログインして"
+    echo "システムを再起動してから、作業用ユーザー（$WORK_USER）でログインして"
     echo "以下のコマンドを実行してください："
     echo
     echo "cd ~/work/bnd-setup"
-    echo "./scripts/setup-dev-environment.sh"
+    echo "./scripts/complete-setup.sh  # 統合セットアップ（推奨）"
+    echo "# または"
+    echo "./scripts/setup-dev-environment.sh  # 個別セットアップ"
     echo
     echo "※ セットアップが中断した場合："
     echo "  - ログを確認: cat /var/log/setup-node*.log"
