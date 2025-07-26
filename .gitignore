@@ -1,0 +1,42 @@
+# Environment files
+.env
+node1-main/.env
+node2-gpu/.env
+
+# GitHub configuration
+.bnd-setup-config
+
+# Docker volumes
+postgres-data/
+redis-data/
+minio-data/
+broker-data/
+
+# Logs
+*.log
+/var/log/setup-*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# SSH keys
+*.pem
+*.key
+id_rsa*

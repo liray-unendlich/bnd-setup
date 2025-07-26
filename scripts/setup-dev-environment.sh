@@ -322,6 +322,28 @@ fi
 echo
 
 # ================================
+# 環境変数テンプレートファイルのセットアップ
+# ================================
+echo "=== 環境変数ファイルセットアップ ==="
+
+# node1-main/.env のセットアップ
+if [ ! -f "node1-main/.env" ] && [ -f "node1-main/.env.template" ]; then
+    echo "※ 進捗: node1-main/.env をテンプレートからコピー中..."
+    cp node1-main/.env.template node1-main/.env
+    echo "✓ node1-main/.env をテンプレートから作成しました"
+fi
+
+# node2-gpu/.env のセットアップ
+if [ ! -f "node2-gpu/.env" ] && [ -f "node2-gpu/.env.template" ]; then
+    echo "※ 進捗: node2-gpu/.env をテンプレートからコピー中..."
+    cp node2-gpu/.env.template node2-gpu/.env
+    echo "✓ node2-gpu/.env をテンプレートから作成しました"
+fi
+
+echo "✓ 環境変数ファイルセットアップ完了"
+echo
+
+# ================================
 # 完了メッセージ
 # ================================
 echo "=================================================================="

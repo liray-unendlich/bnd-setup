@@ -21,10 +21,12 @@ bnd-setup/
 ├── node1-main/              # ノード1（メインノード）用ファイル
 │   ├── docker-compose.yml   # Docker Compose設定
 │   ├── broker.toml.example  # ブローカー設定テンプレート
-│   └── .env                 # 環境変数（要編集）
+│   ├── .env.template        # 環境変数テンプレート
+│   └── .env                 # 環境変数（自動生成・要編集）
 ├── node2-gpu/               # ノード2（GPUノード）用ファイル
 │   ├── docker-compose.yml   # Docker Compose設定
-│   └── .env                 # 環境変数（要編集）
+│   ├── .env.template        # 環境変数テンプレート
+│   └── .env                 # 環境変数（自動生成・要編集）
 ├── scripts/                 # デプロイメントスクリプト
 │   ├── deploy-node1.sh      # ノード1デプロイスクリプト
 │   ├── deploy-node2.sh      # ノード2デプロイスクリプト
