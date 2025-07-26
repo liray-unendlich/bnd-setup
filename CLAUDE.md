@@ -82,19 +82,34 @@ bun install && bun run docs    # http://localhost:5173
 
 ### Boundlessプロジェクト準備
 ```bash
-# Boundlessプロジェクトの準備（ブローカー使用時に必要）
-# ~/work/bnd-setupと同じレベルに配置
-cd ~/work
-git clone https://github.com/boundless-xyz/boundless.git
+# カスタムBoundlessプロジェクトの準備（ブローカー使用時に必要）
+# 設定は環境変数または対話的に入力
+# 設定方法:
+# 1. 環境変数で設定:
+export GITHUB_USERNAME=your_username
+export GITHUB_TOKEN=your_token
+export BOUNDLESS_REPO_URL=github.com/0xmakase/boundless-custom.git
+export BOUNDLESS_BRANCH=chore/new-order-lock-feature
+
+# 2. 設定ファイルで管理:
+cat > ~/.bnd-setup-config << EOF
+GITHUB_USERNAME="your_username"
+GITHUB_TOKEN="your_token"
+BOUNDLESS_REPO_URL="github.com/0xmakase/boundless-custom.git"
+BOUNDLESS_BRANCH="chore/new-order-lock-feature"
+EOF
+chmod 600 ~/.bnd-setup-config
+
+# 3. 対話的に入力（上記未設定の場合、自動的にプロンプト表示）
 
 # ディレクトリ構造確認
 ls -la ~/work/
 # 正しい構造：
-# ~/work/bnd-setup/    <- このリポジトリ
-# ~/work/boundless/    <- Boundlessプロジェクト
+# ~/work/bnd-setup/         <- このリポジトリ
+# ~/work/boundless-custom/  <- カスタムBoundlessプロジェクト
 
-# Boundlessプロジェクトビルド
-cd boundless
+# カスタムBoundlessプロジェクトビルド
+cd boundless-custom
 forge build                    # Solidity contracts
 cargo build --release          # Rust crates
 docker build -f dockerfiles/broker.dockerfile -t boundless-broker .  # brokerイメージビルド

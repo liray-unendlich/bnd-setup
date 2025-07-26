@@ -83,6 +83,24 @@ RUST_LOG=info
 
 ---
 
+## 🔧 事前準備（GitHub設定）
+
+**カスタムBoundlessリポジトリを使用する場合（ブローカー使用時）:**
+```bash
+# GitHub認証設定
+./scripts/setup-github-config.sh
+```
+
+または環境変数で設定:
+```bash
+export GITHUB_USERNAME=your_username
+export GITHUB_TOKEN=your_token
+export BOUNDLESS_REPO_URL=github.com/0xmakase/boundless-custom.git
+export BOUNDLESS_BRANCH=chore/new-order-lock-feature
+```
+
+---
+
 ## 🚀 超簡単セットアップ（推奨）
 
 ### ワンライナーでセットアップ開始
@@ -254,17 +272,71 @@ cd ~/work
 # ディレクトリ構造確認
 ls -la
 # 以下のような構造になっているはず：
-# ~/work/bnd-setup/    <- このリポジトリ
-# ~/work/boundless/    <- Boundlessプロジェクト（次でクローン）
+# ~/work/bnd-setup/         <- このリポジトリ
+# ~/work/boundless-custom/  <- カスタムBoundlessプロジェクト（次でクローン）
 
-# Boundlessプロジェクトのクローン（存在しない場合）
-if [ ! -d "boundless" ]; then
-    echo "Boundlessプロジェクトをクローンします..."
-    git clone https://github.com/boundless-xyz/boundless.git
+# カスタムBoundlessプロジェクトのクローン（存在しない場合）
+if [ ! -d "boundless-custom" ]; then
+    echo "カスタムBoundlessプロジェクトをクローンします..."
+    
+    # 環境変数から設定を読み込み
+    GITHUB_USERNAME=${GITHUB_USERNAME:-}
+    GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    BOUNDLESS_REPO_URL=${BOUNDLESS_REPO_URL:-"github.com/0xmakase/boundless-custom.git"}
+    BOUNDLESS_BRANCH=${BOUNDLESS_BRANCH:-"chore/new-order-lock-feature"}
+    
+    # 設定ファイルから読み込み（環境変数が設定されていない場合）
+    if [ -z "$GITHUB_USERNAME" ] && [ -f ~/.bnd-setup-config ]; then
+        source ~/.bnd-setup-config
+    fi
+    
+    # 対話的に設定を取得
+    if [ -z "$GITHUB_USERNAME" ]; then
+        read -p "GitHubユーザー名を入力してください: " GITHUB_USERNAME
+    fi
+    
+    if [ -z "$GITHUB_TOKEN" ]; then
+        read -sp "GitHub Personal Access Tokenを入力してください: " GITHUB_TOKEN
+        echo
+    fi
+    
+    if [ -z "$BOUNDLESS_REPO_URL" ]; then
+        read -p "Boundlessリポジトリ（デフォルト: github.com/0xmakase/boundless-custom.git）: " REPO_INPUT
+        BOUNDLESS_REPO_URL=${REPO_INPUT:-"github.com/0xmakase/boundless-custom.git"}
+    fi
+    
+    if [ -z "$BOUNDLESS_BRANCH" ]; then
+        read -p "ブランチ名（デフォルト: chore/new-order-lock-feature）: " BRANCH_INPUT
+        BOUNDLESS_BRANCH=${BRANCH_INPUT:-"chore/new-order-lock-feature"}
+    fi
+    
+    # 設定保存確認
+    read -p "設定を保存しますか？ [y/N]: " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        cat > ~/.bnd-setup-config << EOF
+# bnd-setup configuration
+GITHUB_USERNAME="$GITHUB_USERNAME"
+GITHUB_TOKEN="$GITHUB_TOKEN"
+BOUNDLESS_REPO_URL="$BOUNDLESS_REPO_URL"
+BOUNDLESS_BRANCH="$BOUNDLESS_BRANCH"
+EOF
+        chmod 600 ~/.bnd-setup-config
+        echo "設定を ~/.bnd-setup-config に保存しました"
+    fi
+    
+    # クローン実行
+    echo "リポジトリをクローンしています..."
+    git clone https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@${BOUNDLESS_REPO_URL}
+    cd boundless-custom
+    git checkout ${BOUNDLESS_BRANCH}
+    cd ~/work
+    
+    echo "✓ カスタムBoundlessプロジェクトのクローン完了"
 fi
 
-# Boundlessディレクトリに移動してビルド
-cd ~/work/boundless
+# カスタムBoundlessディレクトリに移動してビルド
+cd ~/work/boundless-custom
 
 # Solidity contractsビルド
 forge build

@@ -157,8 +157,8 @@ services:
       stack: 90000000
 
   # ブローカーサービス
-  # 注意: ブローカーを実行するには boundless-xyz/boundless リポジトリが必要です
-  # /home/bento/work/boundless を使用します
+  # 注意: ブローカーを実行するには カスタムboundless-custom リポジトリが必要です
+  # /home/bento/work/boundless-custom を使用します
   broker:
     restart: always
     depends_on:
@@ -171,7 +171,7 @@ services:
       - postgres
     profiles: [broker]
     build:
-      context: ../boundless
+      context: ../boundless-custom
       dockerfile: dockerfiles/broker.dockerfile
     mem_limit: 2G
     cpus: 2
