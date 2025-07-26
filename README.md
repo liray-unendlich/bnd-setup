@@ -265,8 +265,18 @@ fi
 
 # Boundlessディレクトリに移動してビルド
 cd ~/work/boundless
+
+# Solidity contractsビルド
 forge build
+
+# Rust cratesビルド
 cargo build --release
+
+# brokerのDockerイメージビルド（ブローカー使用時に必須）
+docker build -f dockerfiles/broker.dockerfile -t boundless-broker .
+
+# ビルド確認
+docker images | grep boundless-broker
 
 # 開発環境確認
 cargo risczero --version

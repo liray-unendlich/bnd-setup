@@ -181,6 +181,20 @@ if [ -f "Cargo.toml" ]; then
         exit 1
     fi
     
+    # brokerのDockerイメージビルド
+    echo "brokerのDockerイメージをビルド中..."
+    if [ -f "dockerfiles/broker.dockerfile" ]; then
+        if docker build -f dockerfiles/broker.dockerfile -t boundless-broker .; then
+            echo "✓ Broker Dockerイメージビルド完了"
+            docker images | grep boundless-broker
+        else
+            echo "❌ Broker Dockerイメージビルドに失敗しました"
+            exit 1
+        fi
+    else
+        echo "⚠ dockerfiles/broker.dockerfile が見つかりません - スキップ"
+    fi
+    
     # テスト実行（オプション）
     read -p "テストを実行しますか？ [y/N]: " -n 1 -r
     echo

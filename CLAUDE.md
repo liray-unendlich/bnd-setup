@@ -97,6 +97,7 @@ ls -la ~/work/
 cd boundless
 forge build                    # Solidity contracts
 cargo build --release          # Rust crates
+docker build -f dockerfiles/broker.dockerfile -t boundless-broker .  # brokerイメージビルド
 cargo test                     # テスト実行
 RISC0_DEV_MODE=1 cargo test    # 高速開発モードテスト
 
