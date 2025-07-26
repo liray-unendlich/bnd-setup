@@ -39,11 +39,49 @@ bnd-setup/
 ## 📖 目次
 
 - [🚀 超簡単セットアップ](#超簡単セットアップ推奨)
+- [☁️ GPUクラウドサービス対応](#gpuクラウドサービス対応)
 - [⚙️ 運用コマンド](#運用コマンド)  
 - [🤖 ブローカー起動（本格運用）](#ブローカー起動本格運用)
 - [📊 監視とトラブルシューティング](#監視とトラブルシューティング)
 - [🔒 セキュリティ考慮事項](#セキュリティ考慮事項)
 - [💾 バックアップ](#バックアップ)
+
+## ☁️ GPUクラウドサービス対応
+
+**Salad Cloud、RunPod、Vast.ai等のGPUクラウドサービス**でnode2-gpu（GPU証明専用）を実行する場合：
+
+### 1. ノード1（インフラサーバー）のセットアップ
+通常通りオンプレミス/VPSでセットアップ：
+```bash
+export NODE_TYPE=1
+curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quick-start.sh | bash
+```
+
+### 2. ノード2（GPUクラウドサービス）の設定
+
+#### WebUIでの基本設定:
+- **イメージ**: `risczero/risc0-bento-agent:2.3.1@sha256:7873f18005efff03fc5399f1bdcb6760cda7ffbd4fdd4d9c39aedee8972e0a0d`
+- **起動コマンド**: `/app/agent -t prove --redis-ttl 57600`
+- **メモリ**: 4GB以上
+- **GPU**: NVIDIA GPU必須
+
+#### 必須環境変数:
+```bash
+NODE1_IP=YOUR_NODE1_PUBLIC_IP
+DATABASE_URL=postgresql://worker:YOUR_DB_PASS@YOUR_NODE1_IP:5432/taskdb
+REDIS_URL=redis://YOUR_NODE1_IP:6379
+S3_URL=http://YOUR_NODE1_IP:9000
+S3_BUCKET=workflow
+S3_ACCESS_KEY=admin
+S3_SECRET_KEY=YOUR_MINIO_PASS
+RISC0_KECCAK_PO2=17
+CUDA_VISIBLE_DEVICES=0
+RUST_LOG=info
+```
+
+**📋 詳細手順**: [GPUクラウドサービス対応ガイド](docs/container-service-deployment.md)
+
+---
 
 ## 🚀 超簡単セットアップ（推奨）
 
@@ -130,8 +168,8 @@ cd scripts
 
 **ステップ2: ファイアウォール設定**
 ```bash
-# ノード1で実行（NODE2_IPは実際のIPに置換）
-./setup-firewall-node1.sh 192.168.1.101
+# ノード1で実行（パスワード認証ベース、IP制限なし）
+./setup-firewall-node1.sh
 
 # ノード2で実行
 ./setup-firewall-node2.sh
@@ -196,20 +234,37 @@ docker-compose up -d --scale gpu_prove_agent0=2
 
 ブローカーはBoundlessマーケットプレイスと連携してZK証明を自動化するサービスです。
 
-### 1. Boundlessプロジェクト準備
+### 1. 作業ディレクトリの確認・移動
 ```bash
-# ノード1で実行（~/work/bnd-setupと同じディレクトリに配置）
-cd ~/work
-git clone https://github.com/boundless-xyz/boundless.git
+# 現在のディレクトリ確認
+pwd
+
+# bnd-setupディレクトリに移動（どこからでも実行可能）
+cd ~/work/bnd-setup
 
 # ディレクトリ構造確認
-ls -la ~/work/
+ls -la
+```
+
+### 2. Boundlessプロジェクト準備
+```bash
+# bnd-setupから一つ上のworkディレクトリに移動
+cd ~/work
+
+# ディレクトリ構造確認
+ls -la
 # 以下のような構造になっているはず：
 # ~/work/bnd-setup/    <- このリポジトリ
-# ~/work/boundless/    <- Boundlessプロジェクト
+# ~/work/boundless/    <- Boundlessプロジェクト（次でクローン）
 
-# プロジェクトビルド
-cd boundless
+# Boundlessプロジェクトのクローン（存在しない場合）
+if [ ! -d "boundless" ]; then
+    echo "Boundlessプロジェクトをクローンします..."
+    git clone https://github.com/boundless-xyz/boundless.git
+fi
+
+# Boundlessディレクトリに移動してビルド
+cd ~/work/boundless
 forge build
 cargo build --release
 
@@ -218,10 +273,14 @@ cargo risczero --version
 forge --version
 ```
 
-### 2. ブローカー設定
+### 3. ブローカー設定
 ```bash
-# ノード1のnode1-mainディレクトリで実行
+# bnd-setupのnode1-mainディレクトリに移動
 cd ~/work/bnd-setup/node1-main
+
+# 現在のディレクトリ確認
+pwd
+# /home/bento/work/bnd-setup/node1-main であることを確認
 
 # 設定ファイル作成
 cp broker.toml.example broker.toml
@@ -235,18 +294,27 @@ vi broker.toml
 # - timing_mode: 競争戦略
 ```
 
-### 3. 環境変数確認
+### 4. 環境変数確認
 ```bash
+# node1-mainディレクトリで実行
+cd ~/work/bnd-setup/node1-main
+
 # .envファイルで以下が設定されていることを確認
 cat .env | grep -E "(PRIVATE_KEY|RPC_URL|BOUNDLESS_MARKET_ADDRESS)"
 
-# 必要に応じて設定
+# 必要に応じて設定編集
 vi .env
 ```
 
-### 4. ブローカー起動
+### 5. ブローカー起動
 ```bash
-# ノード1で実行
+# node1-mainディレクトリで実行
+cd ~/work/bnd-setup/node1-main
+
+# 設定確認
+docker-compose --profile broker config
+
+# ブローカー起動
 docker-compose --profile broker up -d broker
 
 # 起動確認
@@ -256,13 +324,19 @@ docker-compose logs -f broker
 docker-compose ps | grep broker
 ```
 
-### 5. ブローカー監視
+### 6. ブローカー監視・動作確認
 ```bash
+# node1-mainディレクトリで実行
+cd ~/work/bnd-setup/node1-main
+
 # ログ監視
 docker-compose logs -f broker | grep -E "(order|proof|batch)"
 
+# ブローカーAPI確認
+curl http://localhost:8082/health
+
 # データベース確認
-docker-compose exec broker ls -la /db/
+docker-compose exec postgres psql -U worker -d taskdb -c "SELECT * FROM orders LIMIT 5;"
 
 # 残高確認（ログ内で警告を確認）
 docker-compose logs broker | grep -E "(balance|stake)"
@@ -300,7 +374,8 @@ docker stats
 
 1. **ノード間接続エラー**
    - ファイアウォール設定を確認
-   - IPアドレスが正しく設定されているか確認
+   - PostgreSQL、Redis、MinIOのパスワード設定を確認
+   - ポート開放状況を確認: `sudo ufw status`
 
 2. **GPU認識エラー**
    - NVIDIA Container Toolkitのインストール確認

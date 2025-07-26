@@ -34,8 +34,8 @@ curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quic
 vi node1-main/.env
 # POSTGRES_PASSWORD, MINIO_ROOT_PASS, PRIVATE_KEY, RPC_URL等を設定
 
-# 3. ファイアウォール設定
-./scripts/setup-firewall-node1.sh <ノード2のIP>
+# 3. ファイアウォール設定（パスワード認証ベース）
+./scripts/setup-firewall-node1.sh
 
 # 4. デプロイ実行
 ./scripts/deploy-node1.sh
@@ -119,7 +119,7 @@ bun install && bun run docs    # http://localhost:5173
 ### Prover環境デプロイメント
 ```bash
 # ファイアウォール設定（ネットワーク通信のため必須）
-./scripts/setup-firewall-node1.sh <ノード2IP>  # ノード1: 外部+ノード2アクセス許可
+./scripts/setup-firewall-node1.sh              # ノード1: パスワード認証ベース
 ./scripts/setup-firewall-node2.sh              # ノード2: SSH+GPU監視のみ
 
 # 段階的デプロイ（推奨順序）
