@@ -42,7 +42,7 @@ bnd-setup/
 
 - [🚀 超簡単セットアップ](#超簡単セットアップ推奨)
 - [☁️ GPUクラウドサービス対応](#gpuクラウドサービス対応)
-- [⚙️ 運用コマンド](#運用コマンド)  
+- [⚙️ 運用コマンド](#運用コマンド)
 - [🤖 ブローカー起動（本格運用）](#ブローカー起動本格運用)
 - [📊 監視とトラブルシューティング](#監視とトラブルシューティング)
 - [🔒 セキュリティ考慮事項](#セキュリティ考慮事項)
@@ -62,8 +62,8 @@ curl -fsSL https://raw.githubusercontent.com/liray-unendlich/bnd-setup/main/quic
 ### 2. ノード2（GPUクラウドサービス）の設定
 
 #### WebUIでの基本設定:
-- **イメージ**: `risczero/risc0-bento-agent:2.3.1@sha256:7873f18005efff03fc5399f1bdcb6760cda7ffbd4fdd4d9c39aedee8972e0a0d`
-- **起動コマンド**: `/app/agent -t prove --redis-ttl 57600`
+- **イメージ**: `ghcr.io/liray-unendlich/bnd-setup-prover:latest@sha256:e3d5e1c13522d6b3cd00c32d27a5426647129a8262f50c9b8a847b84b6ae0ef7`
+- **起動コマンド**: `なし`
 - **メモリ**: 4GB以上
 - **GPU**: NVIDIA GPU必須
 
@@ -222,7 +222,7 @@ cd bnd-setup
 # ノード1で
 sudo ./scripts/setup-node1-root.sh
 
-# ノード2で  
+# ノード2で
 sudo ./scripts/setup-node2-root.sh
 
 # システム再起動
@@ -246,7 +246,7 @@ vi .env
 
 重要な設定項目:
 - `POSTGRES_PASSWORD`: データベースパスワード
-- `MINIO_ROOT_PASS`: MinIOパスワード  
+- `MINIO_ROOT_PASS`: MinIOパスワード
 - `PRIVATE_KEY`: ブローカー用秘密鍵
 - `RPC_URL`: RPC接続URL
 
@@ -363,38 +363,38 @@ ls -la
 # カスタムBoundlessプロジェクトのクローン（存在しない場合）
 if [ ! -d "boundless-custom" ]; then
     echo "カスタムBoundlessプロジェクトをクローンします..."
-    
+
     # 環境変数から設定を読み込み
     GITHUB_USERNAME=${GITHUB_USERNAME:-}
     GITHUB_TOKEN=${GITHUB_TOKEN:-}
     BOUNDLESS_REPO_URL=${BOUNDLESS_REPO_URL:-"github.com/0xmakase/boundless-custom.git"}
     BOUNDLESS_BRANCH=${BOUNDLESS_BRANCH:-"chore/new-order-lock-feature"}
-    
+
     # 設定ファイルから読み込み（環境変数が設定されていない場合）
     if [ -z "$GITHUB_USERNAME" ] && [ -f ~/.bnd-setup-config ]; then
         source ~/.bnd-setup-config
     fi
-    
+
     # 対話的に設定を取得
     if [ -z "$GITHUB_USERNAME" ]; then
         read -p "GitHubユーザー名を入力してください: " GITHUB_USERNAME
     fi
-    
+
     if [ -z "$GITHUB_TOKEN" ]; then
         read -sp "GitHub Personal Access Tokenを入力してください: " GITHUB_TOKEN
         echo
     fi
-    
+
     if [ -z "$BOUNDLESS_REPO_URL" ]; then
         read -p "Boundlessリポジトリ（デフォルト: github.com/0xmakase/boundless-custom.git）: " REPO_INPUT
         BOUNDLESS_REPO_URL=${REPO_INPUT:-"github.com/0xmakase/boundless-custom.git"}
     fi
-    
+
     if [ -z "$BOUNDLESS_BRANCH" ]; then
         read -p "ブランチ名（デフォルト: chore/new-order-lock-feature）: " BRANCH_INPUT
         BOUNDLESS_BRANCH=${BRANCH_INPUT:-"chore/new-order-lock-feature"}
     fi
-    
+
     # 設定保存確認
     read -p "設定を保存しますか？ [y/N]: " -n 1 -r
     echo
@@ -409,14 +409,14 @@ EOF
         chmod 600 ~/.bnd-setup-config
         echo "設定を ~/.bnd-setup-config に保存しました"
     fi
-    
+
     # クローン実行
     echo "リポジトリをクローンしています..."
     git clone https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@${BOUNDLESS_REPO_URL}
     cd boundless-custom
     git checkout ${BOUNDLESS_BRANCH}
     cd ~/work
-    
+
     echo "✓ カスタムBoundlessプロジェクトのクローン完了"
 fi
 

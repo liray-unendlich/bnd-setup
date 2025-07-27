@@ -14,7 +14,7 @@ x-base-environment: &base-environment
 services:
   # GPU証明エージェント（メイン）
   gpu_prove_agent0:
-    image: risczero/risc0-bento-agent:2.3.1@sha256:7873f18005efff03fc5399f1bdcb6760cda7ffbd4fdd4d9c39aedee8972e0a0d
+    image: ghcr.io/liray-unendlich/bnd-setup-prover:latest@sha256:e3d5e1c13522d6b3cd00c32d27a5426647129a8262f50c9b8a847b84b6ae0ef7
     restart: always
     runtime: nvidia
     mem_limit: 4G
@@ -32,7 +32,7 @@ services:
 
   # GPU証明エージェント（追加GPU用）
   gpu_prove_agent1:
-    image: risczero/risc0-bento-agent:2.3.1@sha256:7873f18005efff03fc5399f1bdcb6760cda7ffbd4fdd4d9c39aedee8972e0a0d
+    image: ghcr.io/liray-unendlich/bnd-setup-prover:latest@sha256:e3d5e1c13522d6b3cd00c32d27a5426647129a8262f50c9b8a847b84b6ae0ef7
     restart: always
     runtime: nvidia
     mem_limit: 4G
@@ -51,7 +51,7 @@ services:
 
   # GPU証明エージェント（3番目のGPU用）
   gpu_prove_agent2:
-    image: risczero/risc0-bento-agent:2.3.1@sha256:7873f18005efff03fc5399f1bdcb6760cda7ffbd4fdd4d9c39aedee8972e0a0d
+    image: ghcr.io/liray-unendlich/bnd-setup-prover:latest@sha256:e3d5e1c13522d6b3cd00c32d27a5426647129a8262f50c9b8a847b84b6ae0ef7
     restart: always
     runtime: nvidia
     mem_limit: 4G
@@ -70,7 +70,7 @@ services:
 
   # GPU証明エージェント（4番目のGPU用）
   gpu_prove_agent3:
-    image: risczero/risc0-bento-agent:2.3.1@sha256:7873f18005efff03fc5399f1bdcb6760cda7ffbd4fdd4d9c39aedee8972e0a0d
+    image: ghcr.io/liray-unendlich/bnd-setup-prover:latest@sha256:e3d5e1c13522d6b3cd00c32d27a5426647129a8262f50c9b8a847b84b6ae0ef7
     restart: always
     runtime: nvidia
     mem_limit: 4G
