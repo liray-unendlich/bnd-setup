@@ -33,6 +33,6 @@ jobs:
         uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
         with:
           context: ./node2-gpu
-          file: ./node2-gpu/Dockerfile.prover
+          file: ./node2-gpu/dockerfile.prover
           push: true
           tags: ghcr.io/${{github.repository}}-prover:latest
