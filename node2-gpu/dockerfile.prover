@@ -14,7 +14,7 @@ COPY --from=Builder /app/stark_verify.cs /app/stark_verify.cs
 COPY --from=Builder /app/stark_verify_final.pk.dmp /app/stark_verify_final.pk.dmp
 
 # Main prover
-COPY --from=Builder /src/agent /app/agent
+COPY --from=Builder /app/agent /app/agent
 
 # 2) REDIS_TTL のデフォルトを設定（必要なら上書き可）
 ENV REDIS_TTL=57600
