@@ -1,0 +1,12 @@
+# syntax=docker/dockerfile:1
+# 1) 既存の bento-agent イメージをそのまま使う
+FROM risczero/risc0-bento-agent:2.3.1@sha256:7873f18005efff03fc5399f1bdcb6760cda7ffbd4fdd4d9c39aedee8972e0a0d
+
+# 2) REDIS_TTL のデフォルトを設定（必要なら上書き可）
+ENV REDIS_TTL=57600
+
+WORKDIR /app
+
+# 3) ENTRYPOINT だけ差し替え
+#    sh -c でパラメータ展開させつつ起動
+ENTRYPOINT ["sh","-c","exec /app/agent -t prove --redis-ttl ${REDIS_TTL:-57600}"]
