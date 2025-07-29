@@ -1,8 +1,15 @@
 # syntax=docker/dockerfile:1
-# 1) 既存の bento-agent イメージをそのまま使う
 FROM risczero/risc0-bento-agent:2.3.1 AS Builder
 
 FROM nvidia/cuda:12.8.0-runtime-ubuntu24.04 AS Runner
+
+# Install nvtop using Ubuntu PPA
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:quentiumyt/nvtop && \
+    apt-get update && \
+    apt-get install -y nvtop && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy the witness generator and data files from the binary stage
 COPY --from=Builder /app/stark_verify /app/stark_verify
@@ -16,11 +23,10 @@ COPY --from=Builder /app/stark_verify_final.pk.dmp /app/stark_verify_final.pk.dm
 # Main prover
 COPY --from=Builder /app/agent /app/agent
 
-# 2) REDIS_TTL のデフォルトを設定（必要なら上書き可）
+# REDIS_TTL のデフォルト値を設定（必要に応じて上書き可）
 ENV REDIS_TTL=57600
 
 WORKDIR /app
 
-# 3) ENTRYPOINT だけ差し替え
-#    sh -c でパラメータ展開させつつ起動
+# エントリポイントを指定（sh -c で環境変数展開）
 ENTRYPOINT ["sh","-c","exec /app/agent -t prove --redis-ttl ${REDIS_TTL:-57600}"]
