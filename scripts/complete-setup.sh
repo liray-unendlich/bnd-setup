@@ -112,6 +112,17 @@ if [ "$NODE_TYPE" = "node1" ]; then
     read -p "ブローカーを使用しますか？ [y/N]: " -n 1 -r
     echo
     
+    # Boundlessプロジェクトの基本セットアップ（ブローカー使用有無に関わらず）
+    echo
+    echo "--- Boundlessプロジェクトセットアップ ---"
+    cd ~/work
+    
+    # オリジナルBoundlessプロジェクトクローン
+    if [ ! -d "boundless" ]; then
+        echo "※ オリジナルBoundlessプロジェクトをクローン中..."
+        git clone https://github.com/boundless-xyz/boundless.git
+    fi
+    
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "ブローカー設定を開始します..."
         
@@ -119,17 +130,6 @@ if [ "$NODE_TYPE" = "node1" ]; then
         echo
         echo "--- GitHub認証設定 ---"
         ./scripts/setup-github-config.sh
-        
-        # Boundlessプロジェクトのセットアップ
-        echo
-        echo "--- Boundlessプロジェクトセットアップ ---"
-        cd ~/work
-        
-        # オリジナルBoundlessプロジェクトクローン
-        if [ ! -d "boundless" ]; then
-            echo "※ オリジナルBoundlessプロジェクトをクローン中..."
-            git clone https://github.com/boundless-xyz/boundless.git
-        fi
         
         # GitHub認証設定から環境変数を読み込み
         if [ -f ~/.bnd-setup-config ]; then
@@ -216,6 +216,27 @@ if [ "$NODE_TYPE" = "node1" ]; then
         BROKER_ENABLED=true
     else
         echo "ブローカー設定をスキップしました"
+        
+        # ブローカーを使用しない場合でも基本的なBoundlessビルドを実行
+        echo
+        echo "--- 基本Boundlessプロジェクトビルド ---"
+        cd ~/work/boundless
+        
+        echo "※ Solidityコントラクトをビルド中..."
+        if command -v forge &> /dev/null; then
+            forge build
+            echo "✓ Solidityビルド完了"
+        else
+            echo "⚠ Forge not found - Solidityビルドをスキップ"
+        fi
+        
+        echo "※ boundless-cliをインストール中..."
+        cargo install --locked boundless-cli
+        echo "✓ boundless-cliインストール完了"
+        
+        # bnd-setupディレクトリに戻る
+        cd ~/work/bnd-setup
+        
         BROKER_ENABLED=false
     fi
     echo
