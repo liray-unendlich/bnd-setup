@@ -115,6 +115,9 @@ if [ "$NODE_TYPE" = "node1" ]; then
     # Boundlessプロジェクトの基本セットアップ（ブローカー使用有無に関わらず）
     echo
     echo "--- Boundlessプロジェクトセットアップ ---"
+    
+    # ~/workディレクトリが存在しない場合は作成
+    mkdir -p ~/work
     cd ~/work
     
     # オリジナルBoundlessプロジェクトクローン
@@ -191,6 +194,9 @@ if [ "$NODE_TYPE" = "node1" ]; then
         cd ~/work/boundless
         
         echo "※ Solidityコントラクトをビルド中..."
+        # 環境変数を読み込み
+        source ~/.bashrc
+        export PATH="$HOME/.foundry/bin:$PATH"
         if command -v forge &> /dev/null; then
             forge build
             echo "✓ Solidityビルド完了"
@@ -199,6 +205,9 @@ if [ "$NODE_TYPE" = "node1" ]; then
         fi
         
         echo "※ boundless-cliをインストール中..."
+        # 環境変数を読み込み
+        source ~/.bashrc
+        export PATH="$HOME/.cargo/bin:$PATH"
         cargo install --locked boundless-cli
         echo "✓ boundless-cliインストール完了"
         
@@ -224,6 +233,9 @@ if [ "$NODE_TYPE" = "node1" ]; then
         cd ~/work/boundless
         
         echo "※ Solidityコントラクトをビルド中..."
+        # 環境変数を読み込み
+        source ~/.bashrc
+        export PATH="$HOME/.foundry/bin:$PATH"
         if command -v forge &> /dev/null; then
             forge build
             echo "✓ Solidityビルド完了"
@@ -232,6 +244,9 @@ if [ "$NODE_TYPE" = "node1" ]; then
         fi
         
         echo "※ boundless-cliをインストール中..."
+        # 環境変数を読み込み
+        source ~/.bashrc
+        export PATH="$HOME/.cargo/bin:$PATH"
         cargo install --locked boundless-cli
         echo "✓ boundless-cliインストール完了"
         
