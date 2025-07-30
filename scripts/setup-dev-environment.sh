@@ -304,6 +304,9 @@ echo "=== Boundlessプロジェクトセットアップ ==="
 read -p "Boundlessプロジェクトをクローンしますか？ [y/N]: " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # ~/workディレクトリに移動
+    cd ~/work
+    
     if [ -d "boundless" ]; then
         echo "boundlessディレクトリは既に存在します"
         cd boundless
