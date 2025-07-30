@@ -129,6 +129,7 @@ if [ "$NODE_TYPE" = "node1" ]; then
         # GitHub認証設定
         echo
         echo "--- GitHub認証設定 ---"
+        cd ~/work/bnd-setup
         ./scripts/setup-github-config.sh
         
         # GitHub認証設定から環境変数を読み込み
