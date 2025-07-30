@@ -124,6 +124,9 @@ if [ "$NODE_TYPE" = "node1" ]; then
     if [ ! -d "boundless" ]; then
         echo "※ オリジナルBoundlessプロジェクトをクローン中..."
         git clone https://github.com/boundless-xyz/boundless.git
+        cd boundless
+        git checkout v0.13.0
+        cd ~/work
     fi
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
