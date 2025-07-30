@@ -139,6 +139,9 @@ if [ "$NODE_TYPE" = "node1" ]; then
         if [ -f ~/.bnd-setup-config ]; then
             source ~/.bnd-setup-config
             
+            # ~/workディレクトリに移動
+            cd ~/work
+            
             # カスタムBoundlessプロジェクトクローン
             if [ ! -d "boundless-custom" ]; then
                 echo "※ カスタムBoundlessプロジェクトをクローン中..."
