@@ -120,6 +120,98 @@ if [ "$NODE_TYPE" = "node1" ]; then
         echo "--- GitHub認証設定 ---"
         ./scripts/setup-github-config.sh
         
+        # Boundlessプロジェクトのセットアップ
+        echo
+        echo "--- Boundlessプロジェクトセットアップ ---"
+        cd ~/work
+        
+        # オリジナルBoundlessプロジェクトクローン
+        if [ ! -d "boundless" ]; then
+            echo "※ オリジナルBoundlessプロジェクトをクローン中..."
+            git clone https://github.com/boundless-xyz/boundless.git
+        fi
+        
+        # GitHub認証設定から環境変数を読み込み
+        if [ -f ~/.bnd-setup-config ]; then
+            source ~/.bnd-setup-config
+            
+            # カスタムBoundlessプロジェクトクローン
+            if [ ! -d "boundless-custom" ]; then
+                echo "※ カスタムBoundlessプロジェクトをクローン中..."
+                git clone https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@${BOUNDLESS_REPO_URL} boundless-custom
+                cd boundless-custom
+                git checkout ${BOUNDLESS_BRANCH}
+                cd ~/work
+            fi
+            
+            # カスタムファイルをオリジナルにコピー
+            echo "※ カスタムファイルをオリジナルBoundlessにコピー中..."
+            
+            # コピーするファイルリスト
+            COPY_FILES=(
+                "Cargo.lock"
+                "Cargo.toml"
+                "crates/broker/Cargo.toml"
+                "crates/broker/src/lib.rs"
+                "crates/broker/src/config.rs"
+                "crates/broker/src/chain_monitor.rs"
+                "crates/broker/src/market_monitor.rs"
+                "crates/broker/src/order_monitor.rs"
+                "crates/broker/src/order_picker.rs"
+                "crates/broker/src/provers/bonsai.rs"
+                "crates/broker/src/bin/broker.rs"
+                "crates/broker/src/storage.rs"
+                "crates/broker/src/tests/e2e.rs"
+                "crates/guest/assessor/assessor-guest/Cargo.lock"
+                "crates/boundless-market/src/contracts/mod.rs"
+                "crates/boundless-market/src/selector.rs"
+            )
+            
+            # ファイルをコピー
+            for file in "${COPY_FILES[@]}"; do
+                if [ -f "boundless-custom/$file" ]; then
+                    # ディレクトリが存在しない場合は作成
+                    mkdir -p "boundless/$(dirname "$file")"
+                    cp "boundless-custom/$file" "boundless/$file"
+                    echo "  ✓ コピー: $file"
+                else
+                    echo "  ⚠ ファイルが見つかりません: boundless-custom/$file"
+                fi
+            done
+            
+            echo "✓ カスタムファイルのコピー完了"
+        else
+            echo "⚠ GitHub認証設定が見つかりません。標準Boundlessのみを使用します。"
+        fi
+        
+        # Boundlessプロジェクトのビルド
+        echo
+        echo "--- Boundlessプロジェクトビルド ---"
+        cd ~/work/boundless
+        
+        echo "※ Solidityコントラクトをビルド中..."
+        if command -v forge &> /dev/null; then
+            forge build
+            echo "✓ Solidityビルド完了"
+        else
+            echo "⚠ Forge not found - Solidityビルドをスキップ"
+        fi
+        
+        echo "※ boundless-cliをインストール中..."
+        cargo install --locked boundless-cli
+        echo "✓ boundless-cliインストール完了"
+        
+        echo "※ ブローカーDockerイメージをビルド中..."
+        if [ -f "dockerfiles/broker.dockerfile" ]; then
+            docker build -f dockerfiles/broker.dockerfile -t boundless-broker .
+            echo "✓ ブローカーDockerイメージビルド完了"
+        else
+            echo "⚠ broker.dockerfile が見つかりません"
+        fi
+        
+        # bnd-setupディレクトリに戻る
+        cd ~/work/bnd-setup
+        
         echo "✓ ブローカー設定完了"
         BROKER_ENABLED=true
     else
