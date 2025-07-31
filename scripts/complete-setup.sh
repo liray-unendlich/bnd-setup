@@ -171,6 +171,8 @@ if [ "$NODE_TYPE" = "node1" ]; then
                 "crates/broker/src/provers/bonsai.rs"
                 "crates/broker/src/bin/broker.rs"
                 "crates/broker/src/storage.rs"
+                "crates/broker/src/prioritization.rs"
+                "crates/broker/src/submitter.rs"
                 "crates/broker/src/tests/e2e.rs"
                 "crates/guest/assessor/assessor-guest/Cargo.lock"
                 "crates/boundless-market/src/contracts/mod.rs"
