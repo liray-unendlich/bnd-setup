@@ -1,313 +1,220 @@
-# Boundless Broker設定ファイル
-# 実際の使用時は broker.toml にリネームしてください
-# 
-# このファイルはBoundless ZK Prover Brokerの設定テンプレートです
-# 環境変数が設定されている場合、それらが優先されます
-
 [market]
-# Mega-cycle価格（ネイティブトークン建て、例：ETH）
+# Mega-cycle price, denominated in the native token (e.g. ETH).
 #
-# リクエストされた実行で消費されたmega-cycles（100万RISC-Vサイクル）数に
-# 乗算される価格。プリフライトで計算される。リクエストの最低受諾価格の
-# 決定要因の一つ。
-mcycle_price = "0.000000000010000000"
-
-# Mega-cycle価格（Boundlessステーキングトークン建て）
+# This price is multiplied the number of mega-cycles (i.e. million RISC-V cycles) that the requested
+# execution took, as calculated by running the request in preflight. This is one of the inputs to
+# decide the minimum price to accept for a request.
+mcycle_price = "0.0000005"
+# Mega-cycle price, denominated in the Boundless collateral token.
 #
-# 上記のmcycle_priceと同様。ロック期限切れのオーダーなど、ステーキング
-# トークンで支払われるオーダーの最低受諾価格を決定するために使用。
-mcycle_price_stake_token = "0.0000001"
-
-# mcycle制限をバイパスできるアドレスの許可リスト（オプション）
+# Similar to the mcycle_price option above. This is used to determine the minimum price to accept an
+# order when paid in collateral tokens, as is the case for orders with an expired lock.
+mcycle_price_collateral_token = "0.0001"
+# Optional priority requestor addresses that can bypass the mcycle limit and max input size limit.
 #
-# 有効にすると、オーダーは制約なしでプリフライトされます。
+# If enabled, the order will be preflighted without constraints.
 priority_requestor_addresses = [
-    "0x48268bE6235A23eb7b67356469362869D5d0293f",
-    "0x0466ACfc0F27bBA9fBB7A8508f576527e81E83Bd",
+        "0x48268bE6235A23eb7b67356469362869D5d0293f",
+        "0x0466ACfc0F27bBA9fBB7A8508f576527e81E83Bd",
 ]
-
-# 証明クラスターの推定ピーク性能（kHz）
+# Estimated peak performance of the proving cluster, in kHz.
 #
-# 証明能力を推定し、プルーバーが処理できる分のみの作業を受け入れるために使用。
-# Bento CLIを使用したベンチマークや、マーケットオーダー処理データから推定可能。
-# 詳細: https://docs.beboundless.xyz/provers/broker#benchmarking-bento
-peak_prove_khz = 700
-
-# 最大サイクル数（mcycles単位、オプション）
+# Used to estimate proving capacity and accept only as much work as the prover can handle. Estimates
+# can be derived from benchmarking using Bento CLI or from data based on fulfilling market orders.
+# For more information, see https://docs.beboundless.xyz/provers/broker#benchmarking-bento
+peak_prove_khz = 20000
+# Optional max cycles (in mcycles)
 #
-# この最大サイクル数を超えるオーダーはプリフライト後にスキップされます。
-max_mcycle_limit = 12000
-
-# 最大ジャーナルサイズ（バイト）
+# Orders over this max_cycles will be skipped after preflight
+max_mcycle_limit = 150000
+# Max journal size in bytes
 #
-# プリフライトでこのサイズより大きなジャーナルを生成するオーダーはスキップされます。
-# ジャーナルはリクエスト完了のためにオンチェーンに投稿する必要があるため、
-# 過度に大きなジャーナルはリクエストの完了を妨げる可能性があります。
+# Orders that produce a journal larger than this size in preflight will be skipped. Since journals
+# must be posted onchain to complete an order, an excessively large journal may prevent completion
+# of a request.
 max_journal_bytes = 10000
-
-# デッドラインまでの最小秒数（リクエストへの入札を検討するため）
+# Min seconds left before the deadline to consider bidding on a request.
 #
-# デッドラインまでの時間が十分でない場合、プルーバーはリクエストの証明を
-# 完了し、期限切れ前にバッチを公開できない可能性があります。
+# If there is not enough time left before the deadline, the prover may not be able to complete
+# proving of the request and finalize the batch for publishing before expiration.
 min_deadline = 300
-
-# 起動時に可能なオープンオーダーを検索するブロック数
-lookback_blocks = 300 # 300ブロック ≈ 1時間（12秒ブロック時間）
-
-# 最大ステーク量（Boundlessステーキングトークン建て）
+# On startup, the number of blocks to look back for possible open orders.
+lookback_blocks = 1800
+# Max collateral amount, denominated in the Boundless collateral token.
 #
-# これより高いステークを要求するリクエストは考慮されません。
-max_stake = "25" # USDC
-
-# リクエストURLからのダウンロード許可最大入力/イメージファイルサイズ
-max_file_size = 50_000_000
-
-# URLからの入力/イメージ内容取得の最大リトライ回数
+# Requests that require a higher collateral amount than this will not be considered.
+max_collateral = "25" # USDC
+# Max input / image file size allowed for downloading from request URLs.
+max_file_size = 5_000_000_000
+# Max retries for fetching input / image contents from URLs
 #max_fetch_retries = 2
-
-# 最大同時ロック数
+# Default URL for assessor image
+# This URL will be tried first before falling back to the image URL from the boundless market contract.
+#assessor_default_image_url = "https://signal-artifacts.beboundless.xyz/v3/assessor/assessor_guest.bin"
+# Default URL for set builder image
+# This URL will be tried first before falling back to the image URL from the set verifier contract.
+#set_builder_default_image_url = "https://signal-artifacts.beboundless.xyz/v2/set-builder/guest.bin"
+# Max concurrent locks
 #
-# 同時に処理できる証明の最大数
+# Maximum number of concurrent proofs that can be processed at once
 max_concurrent_proofs = 1
-
-# 価格設定で同時に作業するオーダーの最大数
+# Maximum number of orders to concurrently work on pricing
 #
-# システムの圧迫を防ぐため、生成される価格設定タスクを制限するために使用
-max_concurrent_preflights = 4
-
-# オーダー価格設定優先モード
+# Used to limit pricing tasks spawned to prevent overwhelming the system
+max_concurrent_preflights = 6
+# Order pricing priority mode
 #
-# 価格設定のためのオーダー優先順位を決定。オプション：
-# - "random": ランダム順序でオーダーを処理してプルーバー間の競争を分散（デフォルト）
-# - "observation_time": 観察された順序でオーダーを処理（FIFO）
-# - "shortest_expiry": 最短期限順でオーダーを処理（最も早いデッドライン）
-order_pricing_priority = "observation_time"
-
-# オーダーコミット優先モード
+# Determines how orders are prioritized for pricing. Options:
+# - "random": Process orders in random order to distribute competition among provers (default)
+# - "observation_time": Process orders in the order they were observed (FIFO)
+# - "shortest_expiry": Process orders by shortest expiry first (earliest deadline)
+#order_pricing_priority = "random"
+# Order commitment priority mode
 #
-# 証明にコミットする際のオーダー優先順位を決定。オプション：
-# - "random": ランダム順序でオーダーを処理してプルーバー間の競争を分散（デフォルト）
-# - "shortest_expiry": 最短期限順でオーダーを処理（lock-and-fulfillオーダーはロック期限、その他はリクエスト期限）
+# Determines how orders are prioritized when committing to prove them. Options:
+# - "random": Process orders in random order to distribute competition among provers (default)
+# - "shortest_expiry": Process orders by shortest expiry first (lock expiry for lock-and-fulfill orders, request expiry for others)
 #order_commitment_priority = "random"
-
-# FulfillAfterLockExpireオーダーの処理を無効化
+# Max critical task retries on recoverable failures.
 #
-# trueに設定すると、ブローカーはすべてのFulfillAfterLockExpireタイプオーダーを
-# スキップし、LockAndFulfillオーダーのみを処理します
-disable_fulfill_after_lock_expire = true
-
-# オフチェーンオーダーストリーム監視を無効化
-#
-# trueに設定すると、ブローカーはオフチェーンオーダーストリームWebSocketに
-# 接続しません。これにより他のアプリケーション（fast-offchain-reactorなど）が
-# 単一の許可された接続を使用できます。
-# ブローカーは通常通りオンチェーンイベントからオーダーを処理します。
-# デフォルト: false
-disable_offchain_order_stream = false
-
-# 回復可能な障害での最大クリティカルタスクリトライ回数
-#
-# ブローカーサービスには多数のサブタスクがあり、一部はクリティカルとみなされます。
-# タスクが失敗した場合、リトライされますが、この回数のリトライ後、プロセスは終了します。
+# The broker service has a number of subtasks. Some are considered critical. If a task fails, it
+# will be retried, but after this number of retries, the process will exit.
 max_critical_task_retries = 10
-
-# 顧客アドレスの許可リスト（オプション）
+# Optional allow list for customer address.
 #
-# 有効にすると、許可リストにないクライアントからのすべてのリクエストがスキップされます。
+# If enabled, all requests from clients not in the allow list are skipped.
 allow_client_addresses = [
-    "0x2546c553d857d20658ece248f7c7d0861a240681",
-    "0xc2db89b2bd434ceac6c74fbc0b2ad3a280e66db0",
-    "0x734dF7809c4ef94Da037449C287166D114503198",
-    "0x3Ee7d9175eC8BB9e16e8FD3AbDEF5a354b247528"
+"0x2546c553d857d20658ece248f7c7d0861a240681",
+"0xc2db89b2bd434ceac6c74fbc0b2ad3a280e66db0",
+"0x734dF7809c4ef94Da037449C287166D114503198",
+"0x3Ee7d9175eC8BB9e16e8FD3AbDEF5a354b247528",
+"0x2693946791da99da78ac441aba6d5ce2bccd96d3",
+"0x66f68692c03eB9C0656D676f2F4bD13eba40D1B7",
+"0xc4Ce4f04b9907a9401a0Ed7ef073dffEbAB52aAB",
+"0x786deae1d80f8f003320cfc0f6586a7a43acb819",
+"0x89f12aba0bcda3e708b1129eb2557b96f57b0de6",
+"0xf353bda16a83399c11e09615ee7ac326a5a08ccf",
+"0x076aca5883adb08c31e9308c59cd8495a2513da7",
+"0x3f3107e435f59be6dc0673fb049ed65dc0be6f73",
 ]
-
-# 有効にすると、拒否リストのクライアントからのすべてのリクエストがスキップされます。
+# Optional deny list for requestor address.
+#
+# If enabled, all requests from clients in the deny list are skipped.
 #deny_requestor_addresses = []
-
-# ロック優先ガス（wei単位）
+# lockRequest priority gas
 #
-# 設定されている場合、この値がロックトランザクションのベースガス価格に追加されます。
-# 例：400000000 = 0.4 Gwei
-lock_priority_gas = 400000000
-
-# オプション残高警告閾値（ネイティブトークン）
+# Optional additional gas to add to the transaction for lockinRequest, good
+# for increasing the priority if competing with multiple provers during the
+# same block
+#lockin_priority_gas = 100
+# Optional balance warning threshold (in native token)
 #
-# 送信者残高がこれを下回ると、ブローカーは警告ログを発行します
+# If the submitter balance drops below this the broker will issue warning logs
 balance_warn_threshold = "0.1"
-
-# オプション残高エラー閾値（ネイティブトークン）
+# Optional balance error threshold (in native token)
 #
-# 送信者残高がこれを下回ると、ブローカーはエラーログを発行します
+# If the submitter balance drops below this the broker will issue error logs
 balance_error_threshold = "0.05"
-
-# オプションステーク残高警告閾値（ステークトークン）
+# Optional collateral balance warning threshold (in collateral tokens)
 #
-# ステーク残高がこれを下回ると、ブローカーは警告ログを発行します
-stake_balance_warn_threshold = "10"
-
-# オプションステーク残高エラー閾値（ステークトークン）
+# If the collateral balance drops below this the broker will issue warning logs
+collateral_balance_warn_threshold = "10"
+# Optional collateral balance error threshold (in collateral tokens)
 #
-# ステーク残高がこれを下回ると、ブローカーはエラーログを発行します
-stake_balance_error_threshold = "5"
-
-# ダウンロードしたイメージと入力を保存するオプションキャッシュディレクトリ
+# If the collateral balance drops below this the broker will issue error logs
+collateral_balance_error_threshold = "5"
+# Optional cache directory for storing downloaded images and inputs
 #
-# 設定されていない場合、ファイルは毎回再ダウンロードされます
+# If not set, files will be re-downloaded every time
 #cache_dir = "./cache"
-
-# lockin呼び出しのガス推定
+# Gas estimate for lockin call
 #
-# 価格設定中のオーダーに関連するガス費用を推定するために使用。
-# 設定されていない場合、保守的なデフォルトが使用されます。
-lockin_gas_estimate = 200000
-
-# fulfill呼び出しのガス推定
+# Used for estimating the gas costs associated with an order during pricing. If not set a
+# conservative default will be used.
+#lockin_gas_estimate = 200000
+# Gas estimate for fulfill call
 #
-# 価格設定中のオーダーに関連するガス費用を推定するために使用。
-# 設定されていない場合、保守的なデフォルトが使用されます。
-fulfill_gas_estimate = 750000
-
-# RiscZeroGroth16Verifierを使用した証明検証のガス推定
+# Used for estimating the gas costs associated with an order during pricing. If not set a
+# conservative default will be used.
+#fulfill_gas_estimate = 750000
+# Gas estimate for proof verification using the RiscZeroGroth16Verifier
 #
-# 価格設定中のオーダーに関連するガス費用を推定するために使用。
-# 設定されていない場合、保守的なデフォルトが使用されます。
+# Used for estimating the gas costs associated with an order during pricing. If not set a
+# conservative default will be used.
 #groth16_verify_gas_estimate = 250000
 
-# === タイミング制御設定 ===
-
-# オーダーロックのタイミングモード
-# "timestamp"（デフォルト）: pre_lock_wait_msを使用した従来のタイムスタンプベースタイミング
-# "block": MEV保護のためのブロックベース精密タイミング制御
-timing_mode = "timestamp"
-
-## wait_for_target_price動作の設定
-# オーダー価格が最低利益閾値（mcycle_price）に達するまで待機するかどうか
-#
-# wait_for_target_price = true の場合：
-#   - システムはオーダー価格がmcycle_price閾値に達するまで待機
-#   - その後、計算されたタイミングでトランザクションを送信
-#
-# wait_for_target_price = false の場合：
-#   - "timestamp"モード：現在時刻からpre_lock_wait_ms遅延を使用
-#   - "block"モード：オーダー価格が非ゼロになる時を計算し、block_offsetを適用
-#     * minPrice > 0：biddingStart時刻をターゲットとして使用
-#     * minPrice = 0：価格がガス費用を超える時を計算
-wait_for_target_price = false
-
-## タイムスタンプモード設定
-# オーダーモニター ポーリング間隔（ミリ秒）
-# オーダーモニターがロック/証明準備完了オーダーを確認する頻度。
-# 低い値は遅延を減らしますが、CPU使用量が増加します。
-# 例：100 = 100ms、1000 = 1秒（デフォルト：2000 = 2秒）
-order_monitor_interval_ms = 250
-
-# プリロック待機時間（ミリ秒）(wait_for_target_price = falseのタイムスタンプモードでのみ使用)
-# 競争を避けるため、オーダーをロックする前にこの時間待機
-# 例：500 = 0.5秒、2000 = 2秒（デフォルト：0 = 待機なし）
-pre_lock_wait_ms = 0
-
-## ブロックモード設定
-# ブロックオフセット（ブロックモードでのみ使用）
-# ターゲットブロックからのトランザクション送信オフセット
-# - ターゲットブロックはオーダーが利益/非ゼロになる時に基づいて計算
-# - 負の値は早期送信（高競争環境に適している）
-# - 正の値は遅延送信（低競争環境に適している）
-# 例：
-#   -3 = ターゲットの3ブロック前に送信（デフォルト、MEV保護に適している）
-#    0 = ターゲットブロックで正確に送信
-#    2 = ターゲットの2ブロック後に送信
-block_offset = -3
-
 [prover]
-# オプション設定、bonsaiを使用する場合はここでzkVMバージョンを設定
-bonsai_r0_zkvm_ver = "2.1.0"
-
-# 証明ステータスをポーリングするリトライ回数
+# Number of retries to poll for proving status.
 #
-# 一時的な障害に対して少し耐久性を提供します。
+# Provides a little durability for transient failures.
 status_poll_retry_count = 3
-
-# 証明ステータス監視のポーリング間隔（ミリ秒）
+# Polling interval to monitor proving status (in millisecs)
 status_poll_ms = 1000
-
-# 障害時にプルーバーバックエンドにクエリするリトライ回数
+# Number of retries to query a prover backend for on failures.
 #
-# プルーバーバックエンドへのAPIリクエスト、セッション作成、プリフライト、
-# イメージアップロードなどに使用。一時的な障害に対して少し耐久性を提供します。
+# Used for API requests to a prover backend, creating sessions, preflighting, uploading images, etc.
+# Provides a little durability for transient failures.
 req_retry_count = 3
-
-# リトライ間のスリープ時間（ミリ秒）
+# Number of milliseconds to sleep between retries.
 req_retry_sleep_ms = 500
-
-# 証明生成プロセス全体の実行リトライ回数
+# Number of retries to for running the entire proof generation process
 #
-# これはリクエストリトライ回数とは別で、証明プロセスは証明ジョブを作成し、
-# 証明ジョブの完了をポーリングする複数のAPIコールを含む多段階プロセスです。
+# This is separate from the request retry count, as the proving process
+# is a multi-step process involving multiple API calls to create a proof
+# job and then polling for the proof job to complete.
 proof_retry_count = 1
-
-# 証明リトライ間のスリープ時間（ミリ秒）
+# Number of milliseconds to sleep between proof retries.
 proof_retry_sleep_ms = 500
-
-# ビルダーゲストプログラム（ELF）パスを設定
+# Set builder guest program (ELF) path
 #
-# 耐久デプロイメントを使用する場合、これをシステム上の公開された
-# 現在のSOTゲストプログラムパスに設定します
+# When using a durable deploy, set this to the published current SOT guest
+# program path on the system
 #set_builder_guest_path = "./target/riscv-guest/guest-set-builder/set-builder/riscv32im-risc0-zkvm-elf/release/set-builder.bin"
-
-# アセッサーELFパス
+# Assessor ELF path
 #assessor_set_guest_path = "./target/riscv-guest/guest-assessor/assessor-guest/riscv32im-risc0-zkvm-elf/release/assessor-guest.bin"
-
-# 期限切れコミット済みオーダーをチェックする間隔（秒）
+# Interval for checking expired committed orders (in seconds)
 #
-# これはReaperTaskが期限切れオーダーをチェックし、失敗としてマークする間隔です。
-# 設定されていない場合、デフォルトで60秒になります。
+# This is the interval at which the ReaperTask will check for expired orders and mark them as failed.
+# If not set, it defaults to 60 seconds.
 #reaper_interval_secs = 60
-
-# 期限切れオーダーを失敗としてマークする前の猶予期間（秒）
+# Grace period before marking expired orders as failed (in seconds)
 #
-# これはオーダーが期限切れになった後、reaperが失敗としてマークする前の
-# バッファ時間を提供します。これはオーダーを処理している可能性のある
-# アグリゲーターとの競合状態を防ぐのに役立ちます。
-# 設定されていない場合、デフォルトで10800秒（3時間）になります。
+# This provides a buffer time after an order expires before the reaper marks it as failed.
+# This helps prevent race conditions with the aggregator that might be processing the order.
+# If not set, it defaults to 10800 seconds (3 hours).
 # reaper_grace_period_secs = 10800
 
 [batcher]
-# 公開前の最大バッチ持続時間（秒）
-batch_max_time = 1000
-
-# 公開前のバッチサイズ（証明数）
+# Max batch duration before publishing (in seconds)
+batch_max_time = 1
+# Batch size (in proofs) before publishing
 min_batch_size = 1
-
-# バッチブロック時間バッファ
+# Batch blocktime buffer
 #
-# オーダーバッチ内の最低ブロックデッドラインの前の秒数で
-# バッチをフラッシュします。これはおよそ snark_proving_time * 2 であるべきです
+# Number of seconds before the lowest block deadline in the order batch
+# to flush the batch. This should be approximately snark_proving_time * 2
 block_deadline_buffer_secs = 180
-
-# トランザクション確認のタイムアウト（秒）
+# Timeout, in seconds for transaction confirmations
 txn_timeout = 45
-
-# submit_merkle / fulfill_batchを単一トランザクションにバッチ化する
-# 単一TXN送信を使用
+# Use the single TXN submission that batches submit_merkle / fulfill_batch into
 #
-# 単一トランザクション。デプロイされたコントラクトに`submitRootAndFulfill`メソッドが
-# 存在する必要があります
+# A single transaction. Requires the `submitRootAndFulfill` method
+# be present on the deployed contract
 single_txn_fulfill = true
-
-# 履行時にプルーバー残高から引き出すかどうか
+# Whether to withdraw from the prover balance when fulfilling
 withdraw = false
-
-# ポーリング時間（ミリ秒）
+# Polling time, in milliseconds
 #
-# 集約する新しいオーダーのポーリング間隔と、バッチ完了条件を
-# チェックする頻度
+# The time between polls for new orders to aggregate and how often to check for batch finalize
+# conditions
 #batch_poll_time_ms = 500
-
-# 超過時に公開をトリガーする最大結合ジャーナルサイズ（バイト）
+# Max combined journal size (in bytes) that once exceeded will trigger a publish
 #batch_max_journal_bytes = 10000
-
-# 公開前の最大バッチ手数料（ETH）
+# max batch fees (in ETH) before publishing
 #batch_max_fees = "0.1"
+# Number of attempts to make to submit a batch before abandoning
+max_submission_attempts = 10
 
-# バッチを放棄する前の送信試行回数
-#max_submission_attempts = 2
+# Optional config, only needed if using bonsai to set the zkVM version header. Not necessary when
+# using Bento as the prover.
+# bonsai_r0_zkvm_ver = "2.3.0"

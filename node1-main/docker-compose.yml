@@ -12,12 +12,20 @@ x-base-environment: &base-environment
   RUST_BACKTRACE: 1
 
 x-agent-common: &agent-common
-  image: risczero/risc0-bento-agent:2.3.1@sha256:7873f18005efff03fc5399f1bdcb6760cda7ffbd4fdd4d9c39aedee8972e0a0d
+  runtime: nvidia
+  build:
+    context: .
+    dockerfile: ${AGENT_DOCKERFILE:-dockerfiles/agent.prebuilt.dockerfile}
+    args:
+      BINARY_URL: ${BENTO_BINARY_URL:-https://github.com/boundless-xyz/boundless/releases/download/bento-v1.0.0/bento-bundle-linux-amd64.tar.gz}
   restart: always
   depends_on:
-    - postgres
-    - redis
-    - minio
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    minio:
+      condition: service_healthy
   environment:
     <<: *base-environment
 
@@ -45,6 +53,34 @@ x-broker-environment: &broker-environment
   POSTGRES_USER: ${POSTGRES_USER}
   POSTGRES_PASS: ${POSTGRES_PASSWORD}
 
+x-broker-common: &broker-common
+  restart: always
+  depends_on:
+    rest_api:
+      condition: service_healthy
+    gpu_prove_agent0:
+      condition: service_started
+    exec_agent0:
+      condition: service_started
+    exec_agent1:
+      condition: service_started
+    aux_agent:
+      condition: service_started
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  profiles: [broker]
+  build:
+    context: .
+    dockerfile: ${BROKER_DOCKERFILE:-dockerfiles/broker.prebuilt.dockerfile}
+    args:
+      BINARY_URL: ${BROKER_BINARY_URL:-https://github.com/boundless-xyz/boundless/releases/download/broker-v1.0.0/broker}
+  mem_limit: 2G
+  cpus: 2
+  stop_grace_period: 3h
+  network_mode: host
+
 services:
   # インフラサービス群
   redis:
@@ -53,8 +89,15 @@ services:
     restart: always
     ports:
       - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --maxmemory-policy allkeys-lru --save 900 1 --appendonly yes
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   postgres:
     hostname: postgres
@@ -69,6 +112,16 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     command: -p ${POSTGRES_PORT:-5432}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-worker} -d ${POSTGRES_DB:-taskdb}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   minio:
     hostname: minio
@@ -92,49 +145,53 @@ services:
 
   # APIサービス群
   rest_api:
-    image: risczero/risc0-bento-rest-api:2.3.1@sha256:71dafe532d4e1ada47989b63cf04b2e2bae6b62eebb5d47973e875e2eddf6c3a
+    build:
+      context: .
+      dockerfile: ${REST_API_DOCKERFILE:-dockerfiles/rest_api.prebuilt.dockerfile}
+      args:
+        BINARY_URL: ${BENTO_BINARY_URL:-https://github.com/boundless-xyz/boundless/releases/download/bento-v1.0.0/bento-bundle-linux-amd64.tar.gz}
     restart: always
     depends_on:
-      - postgres
-      - minio
-    mem_limit: 1G
-    cpus: 1
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    mem_limit: 3G
     environment:
       <<: *base-environment
     ports:
       - '8081:8081'
     entrypoint: /app/rest_api --bind-addr 0.0.0.0:8081 --snark-timeout ${SNARK_TIMEOUT:-180}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
-  grafana:
-    image: ${GRAFANA_IMG:-grafana/grafana:11.0.0}
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_LOG_LEVEL=WARN
-      - POSTGRES_HOST=postgres
-      - POSTGRES_DB=${POSTGRES_DB:-taskdb}
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
-      - POSTGRES_USER=${POSTGRES_USER:-worker}
-      - POSTGRES_PASS=${POSTGRES_PASSWORD:-password}
-      - GF_INSTALL_PLUGINS=frser-sqlite-datasource
-    volumes:
-      - ./dockerfiles/grafana:/etc/grafana/provisioning/
-      - grafana-data:/var/lib/grafana
-      - broker-data:/db
-    depends_on:
-      - postgres
-      - redis
-      - minio
-
-  # CPUコンピューティングエージェント群
   exec_agent0:
     <<: *exec-agent-common
+    cpus: 2
 
   exec_agent1:
     <<: *exec-agent-common
+    cpus: 2
+
+  exec_agent2:
+    <<: *exec-agent-common
+    cpus: 2
+
+  exec_agent3:
+    <<: *exec-agent-common
+    cpus: 2
+
+  exec_agent4:
+    <<: *exec-agent-common
+    cpus: 2
+
+  exec_agent5:
+    <<: *exec-agent-common
+    cpus: 2
 
   aux_agent:
     <<: *agent-common
@@ -142,7 +199,7 @@ services:
     cpus: 1
     environment:
       <<: *base-environment
-      LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:-/usr/local/cuda-12.2/compat/}
+      LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:-/usr/local/cuda-12.9/compat/}
     entrypoint: /app/agent -t aux --monitor-requeue --redis-ttl ${REDIS_TTL:-57600}
 
   snark_agent:
@@ -152,30 +209,13 @@ services:
     entrypoint: /app/agent -t snark --redis-ttl ${REDIS_TTL:-57600}
     environment:
       <<: *base-environment
-      LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:-/usr/local/cuda-12.2/compat/}
+      LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:-/usr/local/cuda-12.9/compat/}
     ulimits:
       stack: 90000000
 
-  # ブローカーサービス
-  # 注意: ブローカーを実行するには カスタムboundless-custom リポジトリが必要です
   # /home/bento/work/boundless-custom を使用します
   broker:
-    restart: always
-    depends_on:
-      - rest_api
-      - exec_agent0
-      - exec_agent1
-      - aux_agent
-      - snark_agent
-      - redis
-      - postgres
-    profiles: [broker]
-    build:
-      context: ../boundless-custom
-      dockerfile: dockerfiles/broker.dockerfile
-    mem_limit: 2G
-    cpus: 2
-    stop_grace_period: 3h
+    <<: *broker-common
     volumes:
       - type: bind
         source: ./broker.toml
@@ -183,11 +223,10 @@ services:
       - broker-data:/db/
     environment:
       <<: *broker-environment
-    entrypoint: /app/broker --db-url 'sqlite:///db/broker.db' --config-file /app/broker.toml --bento-api-url http://rest_api:8081
+    entrypoint: /app/broker --db-url 'sqlite:///db/broker.db' --config-file /app/broker.toml --bento-api-url http://localhost:8081
 
 volumes:
   redis-data:
   postgres-data:
   minio-data:
-  grafana-data:
   broker-data:

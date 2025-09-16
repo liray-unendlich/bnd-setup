@@ -1,32 +1,43 @@
 # syntax=docker/dockerfile:1
-FROM risczero/risc0-bento-agent:2.3.1 AS Builder
+ARG CUDA_RUNTIME_IMG=nvidia/cuda:12.9.1-runtime-ubuntu24.04
+ARG VERSION=v1.0.0
+ARG BINARY_URL=https://github.com/boundless-xyz/boundless/releases/download/bento-${VERSION}/bento-bundle-linux-amd64.tar.gz
 
-FROM nvidia/cuda:12.8.0-runtime-ubuntu24.04 AS Runner
+FROM ${CUDA_RUNTIME_IMG}
+ARG BINARY_URL
 
-# Install nvtop using Ubuntu PPA
+# Install runtime dependencies matching non-prebuilt version
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:quentiumyt/nvtop && \
-    apt-get update && \
-    apt-get install -y nvtop && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get install -y software-properties-common ca-certificates libssl3 curl tar nvtop && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy the witness generator and data files from the binary stage
-COPY --from=Builder /app/stark_verify /app/stark_verify
-COPY --from=Builder /app/stark_verify.dat /app/stark_verify.dat
+# Download and extract bento bundle tar.gz
+RUN if [ -z "$BINARY_URL" ]; then echo "ERROR: BINARY_URL is required" && exit 1; fi && \
+    mkdir -p /app && \
+    curl -L -o /tmp/bento-bundle.tar.gz "$BINARY_URL" && \
+    tar -xzf /tmp/bento-bundle.tar.gz -C /tmp && \
+    mv /tmp/bento-bundle/bento-agent /app/agent && \
+    rm -rf /tmp/*
 
-# Copy the prover binary and related files from previous stages
-COPY --from=Builder /app/prover /app/prover
-COPY --from=Builder /app/stark_verify.cs /app/stark_verify.cs
-COPY --from=Builder /app/stark_verify_final.pk.dmp /app/stark_verify_final.pk.dmp
+# TODO following rzup commands should likely only be done in a builder image to minimize image size
+# Install RISC0 and groth16 component early for better caching
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+ENV RISC0_HOME=/usr/local/risc0
+ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Main prover
-COPY --from=Builder /app/agent /app/agent
+# Install rust and target version (should match rust-toolchain.toml for best speed)
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
+    && chmod -R a+w $RUSTUP_HOME $CARGO_HOME \
+    && rustup install 1.88
 
-# REDIS_TTL のデフォルト値を設定（必要に応じて上書き可）
-ENV REDIS_TTL=57600
+# Install RISC0 specifically for groth16 component - this layer will be cached unless RISC0_HOME changes
+RUN curl -L https://risczero.com/install | bash && \
+    /root/.risc0/bin/rzup install risc0-groth16 && \
+    # Clean up any temporary files to reduce image size
+    rm -rf /tmp/* /var/tmp/*    
 
 WORKDIR /app
-
-# エントリポイントを指定（sh -c で環境変数展開）
-ENTRYPOINT ["sh","-c","exec /app/agent -t prove --redis-ttl ${REDIS_TTL:-57600}"]
+ENTRYPOINT ["/app/agent"]

@@ -1,15 +1,13 @@
-# syntax=docker/dockerfile:1
+# Dockerfile for pre-built bento-agent binary
+# Usage: docker build -f dockerfiles/agent.prebuilt.dockerfile --build-arg BINARY_URL=<url> -t bento-agent:prebuilt .
 ARG CUDA_RUNTIME_IMG=nvidia/cuda:12.9.1-runtime-ubuntu24.04
-ARG VERSION=v1.0.0
-ARG BINARY_URL=https://github.com/boundless-xyz/boundless/releases/download/bento-${VERSION}/bento-bundle-linux-amd64.tar.gz
-
 FROM ${CUDA_RUNTIME_IMG}
+
 ARG BINARY_URL
 
 # Install runtime dependencies matching non-prebuilt version
 RUN apt-get update && \
-    apt-get install -y software-properties-common ca-certificates libssl3 curl tar nvtop && \
-    apt-get clean && \
+    apt-get install -y ca-certificates libssl3 curl tar && \
     rm -rf /var/lib/apt/lists/*
 
 # Download and extract bento bundle tar.gz
@@ -37,7 +35,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
 RUN curl -L https://risczero.com/install | bash && \
     /root/.risc0/bin/rzup install risc0-groth16 && \
     # Clean up any temporary files to reduce image size
-    rm -rf /tmp/* /var/tmp/*    
+    rm -rf /tmp/* /var/tmp/*
 
 WORKDIR /app
 ENTRYPOINT ["/app/agent"]
