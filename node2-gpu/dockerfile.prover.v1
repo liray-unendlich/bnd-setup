@@ -40,4 +40,4 @@ RUN curl -L https://risczero.com/install | bash && \
     rm -rf /tmp/* /var/tmp/*    
 
 WORKDIR /app
-ENTRYPOINT ["/app/agent -t prove"]
+ENTRYPOINT ["/app/agent"]
