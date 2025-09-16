@@ -35,6 +35,6 @@ jobs:
           context: ./node2-gpu
           file: ./node2-gpu/dockerfile.prover
           push: true
-          tags: ghcr.io/${{github.repository}}-prover:latest
+          tags: ghcr.io/${{github.repository}}-prover:v2
           cache-from: type=gha
           cache-to: type=gha,mode=max
