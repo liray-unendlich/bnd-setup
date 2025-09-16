@@ -1,4 +1,4 @@
-name: release prover for rtx5090 image
+name: release prover for official image
 
 on:
   workflow_dispatch:
@@ -33,6 +33,6 @@ jobs:
         uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
         with:
           context: ./node2-gpu
-          file: ./node2-gpu/dockerfile.prover.rtx5090
+          file: ./node2-gpu/dockerfile.prover.v1
           push: true
-          tags: ghcr.io/${{github.repository}}-prover-rtx5090:latest
+          tags: ghcr.io/${{github.repository}}-prover-official:latest
