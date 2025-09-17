@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG CUDA_RUNTIME_IMG=nvidia/cuda:13.0.1-runtime-ubuntu24.04
+ARG CUDA_RUNTIME_IMG=nvidia/cuda:12.9.1-runtime-ubuntu24.04
 ARG VERSION=v1.0.0
 ARG BINARY_URL=https://github.com/boundless-xyz/boundless/releases/download/bento-${VERSION}/bento-bundle-linux-amd64.tar.gz
 
